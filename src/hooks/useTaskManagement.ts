@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { TaskWithComments, TaskStatus, TaskComment } from '@/types/task';
-import { Team, TeamMember } from '@/types/team';
+import { TeamMember } from '@/types/team';
+import { Project } from '@/types/project';
 import { toast } from 'sonner';
 
 const useTaskManagement = (projectId: string, teamId: string | null) => {
@@ -78,27 +79,30 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
 
-  // Team members state
-  const [teams, setTeams] = useState<Team[]>([
+  // Projects state
+  const [projects, setProjects] = useState<Project[]>([
     { 
-      id: "team-1", 
-      name: "Design Team",
+      id: "project-1", 
+      name: "Marketing Campaign",
+      description: "Q2 marketing campaign for product launch",
       members: [
         { id: "user-1", name: "Alex" },
         { id: "user-2", name: "Sarah" }
       ]
     },
     { 
-      id: "team-2", 
-      name: "Development Team",
+      id: "project-2", 
+      name: "Website Redesign",
+      description: "Redesign the company website with new branding",
       members: [
         { id: "user-3", name: "Mike" },
         { id: "user-4", name: "Emily" }
       ]
     },
     { 
-      id: "team-3", 
-      name: "Marketing Team",
+      id: "project-3", 
+      name: "Mobile App Development",
+      description: "Develop a mobile app for iOS and Android",
       members: [
         { id: "user-2", name: "Sarah" },
         { id: "user-5", name: "David" }
@@ -106,34 +110,13 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     }
   ]);
 
-  // Get all team members from all teams
-  const getAllTeamMembers = (): TeamMember[] => {
-    const allMembers: TeamMember[] = [];
-    const uniqueIds = new Set();
-    
-    teams.forEach(team => {
-      if (team.members) {
-        team.members.forEach(member => {
-          if (!uniqueIds.has(member.id)) {
-            allMembers.push(member);
-            uniqueIds.add(member.id);
-          }
-        });
-      }
-    });
-    
-    return allMembers;
+  // Get project members for the current project
+  const getProjectMembers = (): TeamMember[] => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.members || [];
   };
 
-  // Get team members for a specific team
-  const getTeamMembers = (teamId: string | null): TeamMember[] => {
-    if (!teamId) return getAllTeamMembers();
-    
-    const team = teams.find(t => t.id === teamId);
-    return team?.members || [];
-  };
-
-  // Get filtered tasks based on active project and team
+  // Get filtered tasks based on active project
   const getFilteredTasks = () => {
     const filtered: Record<TaskStatus, TaskWithComments[]> = {
       'backlog': [],
@@ -146,18 +129,7 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
       const statusTasks = tasks[status as TaskStatus].filter(task => 
         (!task.projectId || task.projectId === projectId)
       );
-      
-      // If team filter is active, filter by team members
-      if (teamId) {
-        const teamMembers = getTeamMembers(teamId);
-        const teamMemberNames = teamMembers.map(m => m.name);
-        
-        filtered[status as TaskStatus] = statusTasks.filter(task => 
-          task.assignee && teamMemberNames.includes(task.assignee)
-        );
-      } else {
-        filtered[status as TaskStatus] = statusTasks;
-      }
+      filtered[status as TaskStatus] = statusTasks;
     });
     
     return filtered;
@@ -245,7 +217,7 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     tasks,
     setTasks,
     getFilteredTasks,
-    getTeamMembers,
+    getTeamMembers: getProjectMembers,
     draggedTask,
     draggingOver,
     handleDragStart,

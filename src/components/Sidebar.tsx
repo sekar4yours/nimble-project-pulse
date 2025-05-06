@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -27,69 +28,44 @@ import {
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-export type Project = {
-  id: string;
-  name: string;
-};
-
-export type Team = {
-  id: string;
-  name: string;
-  members?: TeamMember[];
-};
-
-export type TeamMember = {
-  id: string;
-  name: string;
-  email?: string;
-  role?: string;
-};
+import { Project } from "@/types/project";
+import { TeamMember } from "@/types/team";
 
 interface SidebarProps {
   activeProject: string | null;
-  activeTeam: string | null;
   onProjectSelect: (projectId: string) => void;
-  onTeamSelect: (teamId: string) => void;
   onCreateProject: () => void;
-  onCreateTeam: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
-  activeProject, 
-  activeTeam,
+  activeProject,
   onProjectSelect,
-  onTeamSelect,
-  onCreateProject,
-  onCreateTeam 
+  onCreateProject
 }) => {
   // Sample data - in a real app, this would come from API
   const [projects, setProjects] = useState<Project[]>([
-    { id: "project-1", name: "Marketing Campaign" },
-    { id: "project-2", name: "Website Redesign" },
-    { id: "project-3", name: "Mobile App Development" }
-  ]);
-  
-  const [teams, setTeams] = useState<Team[]>([
     { 
-      id: "team-1", 
-      name: "Design Team",
+      id: "project-1", 
+      name: "Marketing Campaign",
+      description: "Q2 marketing campaign for product launch",
       members: [
         { id: "user-1", name: "Alex" },
         { id: "user-2", name: "Sarah" }
       ]
     },
     { 
-      id: "team-2", 
-      name: "Development Team",
+      id: "project-2", 
+      name: "Website Redesign",
+      description: "Redesign the company website with new branding",
       members: [
         { id: "user-3", name: "Mike" },
         { id: "user-4", name: "Emily" }
       ]
     },
     { 
-      id: "team-3", 
-      name: "Marketing Team",
+      id: "project-3", 
+      name: "Mobile App Development",
+      description: "Develop a mobile app for iOS and Android",
       members: [
         { id: "user-2", name: "Sarah" },
         { id: "user-5", name: "David" }
@@ -99,12 +75,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Modal states
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newTeamName, setNewTeamName] = useState("");
-  const [selectedTeamForMember, setSelectedTeamForMember] = useState<Team | null>(null);
-  const [newTeamMember, setNewTeamMember] = useState({
+  const [isProjectMemberModalOpen, setIsProjectMemberModalOpen] = useState(false);
+  const [newProject, setNewProject] = useState({
+    name: "",
+    description: ""
+  });
+  const [selectedProjectForMember, setSelectedProjectForMember] = useState<Project | null>(null);
+  const [newProjectMember, setNewProjectMember] = useState({
     name: "",
     email: "",
     role: ""
@@ -122,67 +99,54 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const handleCreateProject = () => {
-    if (!newProjectName.trim()) return;
+    if (!newProject.name.trim()) return;
     
-    const newProject: Project = {
+    const newProjectData: Project = {
       id: `project-${Date.now()}`,
-      name: newProjectName
-    };
-    
-    setProjects([...projects, newProject]);
-    setNewProjectName("");
-    setIsProjectModalOpen(false);
-    onProjectSelect(newProject.id);
-    toast.success(`Project "${newProject.name}" created`);
-  };
-
-  const handleCreateTeam = () => {
-    if (!newTeamName.trim()) return;
-    
-    const newTeam: Team = {
-      id: `team-${Date.now()}`,
-      name: newTeamName,
+      name: newProject.name,
+      description: newProject.description,
       members: []
     };
     
-    setTeams([...teams, newTeam]);
-    setNewTeamName("");
-    setIsTeamModalOpen(false);
-    toast.success(`Team "${newTeam.name}" created`);
+    setProjects([...projects, newProjectData]);
+    setNewProject({ name: "", description: "" });
+    setIsProjectModalOpen(false);
+    onProjectSelect(newProjectData.id);
+    toast.success(`Project "${newProjectData.name}" created`);
   };
 
-  const handleAddTeamMember = (teamId: string) => {
-    const team = teams.find(t => t.id === teamId);
-    if (team) {
-      setSelectedTeamForMember(team);
-      setIsTeamMemberModalOpen(true);
+  const handleAddProjectMember = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProjectForMember(project);
+      setIsProjectMemberModalOpen(true);
     }
   };
 
-  const handleCreateTeamMember = () => {
-    if (!selectedTeamForMember || !newTeamMember.name.trim()) return;
+  const handleCreateProjectMember = () => {
+    if (!selectedProjectForMember || !newProjectMember.name.trim()) return;
 
     const newMember: TeamMember = {
       id: `user-${Date.now()}`,
-      name: newTeamMember.name,
-      email: newTeamMember.email,
-      role: newTeamMember.role
+      name: newProjectMember.name,
+      email: newProjectMember.email,
+      role: newProjectMember.role
     };
 
-    const updatedTeams = teams.map(team => {
-      if (team.id === selectedTeamForMember.id) {
+    const updatedProjects = projects.map(project => {
+      if (project.id === selectedProjectForMember.id) {
         return {
-          ...team,
-          members: [...(team.members || []), newMember]
+          ...project,
+          members: [...(project.members || []), newMember]
         };
       }
-      return team;
+      return project;
     });
 
-    setTeams(updatedTeams);
-    setNewTeamMember({ name: "", email: "", role: "" });
-    setIsTeamMemberModalOpen(false);
-    toast.success(`${newMember.name} added to ${selectedTeamForMember.name}`);
+    setProjects(updatedProjects);
+    setNewProjectMember({ name: "", email: "", role: "" });
+    setIsProjectMemberModalOpen(false);
+    toast.success(`${newMember.name} added to ${selectedProjectForMember.name}`);
   };
 
   const handleLogout = () => {
@@ -190,6 +154,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsAuthenticated(false);
     toast.success('Logged out successfully');
   };
+
+  // Get the currently selected project's details
+  const activeProjectData = activeProject 
+    ? projects.find(p => p.id === activeProject) 
+    : null;
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
@@ -228,75 +197,73 @@ const Sidebar: React.FC<SidebarProps> = ({
                   )}
                   onClick={() => onProjectSelect(project.id)}
                 >
-                  {project.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Teams Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
-                <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                TEAMS
-              </h2>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-5 w-5"
-                onClick={() => setIsTeamModalOpen(true)}
-              >
-                <PlusCircle className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
-            
-            <ul className="space-y-1">
-              {teams.map(team => (
-                <li key={team.id} className="group">
-                  <div 
-                    className={cn(
-                      "px-2 py-1.5 text-sm rounded-md cursor-pointer flex justify-between items-center",
-                      activeTeam === team.id ? "bg-primary text-white" : "hover:bg-secondary"
-                    )}
-                  >
-                    <span 
-                      className="flex-grow"
-                      onClick={() => onTeamSelect(team.id)}
-                    >
-                      {team.name}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="flex-grow truncate">{project.name}</span>
                     <Button
                       variant="ghost"
                       size="icon"
                       className={cn(
                         "h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity",
-                        activeTeam === team.id ? "text-white" : "text-muted-foreground"
+                        activeProject === project.id ? "text-white" : "text-muted-foreground"
                       )}
-                      onClick={() => handleAddTeamMember(team.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddProjectMember(project.id);
+                      }}
                     >
                       <PlusCircle className="h-3 w-3" />
                     </Button>
                   </div>
-                  {team.members && team.members.length > 0 && activeTeam === team.id && (
-                    <ul className="pl-4 mt-1 space-y-1">
-                      {team.members.map(member => (
-                        <li 
-                          key={member.id}
-                          className="flex items-center px-2 py-1 text-xs text-muted-foreground"
-                        >
-                          <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
-                            {member.name.charAt(0)}
-                          </div>
-                          {member.name}
-                        </li>
-                      ))}
-                    </ul>
+                  {project.description && (
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {project.description}
+                    </p>
                   )}
                 </li>
               ))}
             </ul>
           </div>
+
+          {/* Project Members Section - Only visible when a project is selected */}
+          {activeProjectData && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
+                  <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                  PROJECT MEMBERS
+                </h2>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5"
+                  onClick={() => handleAddProjectMember(activeProjectData.id)}
+                >
+                  <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </div>
+              
+              <ul className="space-y-1 pl-4">
+                {activeProjectData.members && activeProjectData.members.length > 0 ? (
+                  activeProjectData.members.map(member => (
+                    <li 
+                      key={member.id}
+                      className="flex items-center px-2 py-1 text-xs text-muted-foreground"
+                    >
+                      <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
+                        {member.name.charAt(0)}
+                      </div>
+                      {member.name}
+                      {member.role && (
+                        <span className="ml-1 text-xs text-muted-foreground">({member.role})</span>
+                      )}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-xs text-muted-foreground">No members yet</li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -344,9 +311,20 @@ const Sidebar: React.FC<SidebarProps> = ({
               <label htmlFor="projectName" className="text-sm font-medium">Project Name</label>
               <Input 
                 id="projectName" 
-                value={newProjectName} 
-                onChange={(e) => setNewProjectName(e.target.value)}
+                value={newProject.name} 
+                onChange={(e) => setNewProject({...newProject, name: e.target.value})}
                 placeholder="Enter project name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="projectDescription" className="text-sm font-medium">Project Description (Optional)</label>
+              <Textarea 
+                id="projectDescription" 
+                value={newProject.description} 
+                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                placeholder="Enter project description"
+                className="resize-none"
+                rows={3}
               />
             </div>
           </div>
@@ -357,36 +335,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Add Team Modal */}
-      <Dialog open={isTeamModalOpen} onOpenChange={setIsTeamModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create New Team</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="teamName" className="text-sm font-medium">Team Name</label>
-              <Input 
-                id="teamName" 
-                value={newTeamName} 
-                onChange={(e) => setNewTeamName(e.target.value)}
-                placeholder="Enter team name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTeamModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateTeam}>Create Team</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Team Member Modal */}
-      <Dialog open={isTeamMemberModalOpen} onOpenChange={setIsTeamMemberModalOpen}>
+      {/* Add Project Member Modal */}
+      <Dialog open={isProjectMemberModalOpen} onOpenChange={setIsProjectMemberModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              Add Member to {selectedTeamForMember?.name}
+              Add Member to {selectedProjectForMember?.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -394,8 +348,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               <label htmlFor="memberName" className="text-sm font-medium">Name</label>
               <Input 
                 id="memberName" 
-                value={newTeamMember.name} 
-                onChange={(e) => setNewTeamMember({...newTeamMember, name: e.target.value})}
+                value={newProjectMember.name} 
+                onChange={(e) => setNewProjectMember({...newProjectMember, name: e.target.value})}
                 placeholder="Enter member name"
               />
             </div>
@@ -403,8 +357,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               <label htmlFor="memberEmail" className="text-sm font-medium">Email</label>
               <Input 
                 id="memberEmail" 
-                value={newTeamMember.email} 
-                onChange={(e) => setNewTeamMember({...newTeamMember, email: e.target.value})}
+                value={newProjectMember.email} 
+                onChange={(e) => setNewProjectMember({...newProjectMember, email: e.target.value})}
                 placeholder="Enter member email"
               />
             </div>
@@ -412,15 +366,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               <label htmlFor="memberRole" className="text-sm font-medium">Role</label>
               <Input 
                 id="memberRole" 
-                value={newTeamMember.role} 
-                onChange={(e) => setNewTeamMember({...newTeamMember, role: e.target.value})}
+                value={newProjectMember.role} 
+                onChange={(e) => setNewProjectMember({...newProjectMember, role: e.target.value})}
                 placeholder="Enter member role"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTeamMemberModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateTeamMember}>Add Member</Button>
+            <Button variant="outline" onClick={() => setIsProjectMemberModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateProjectMember}>Add Member</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
