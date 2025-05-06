@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
@@ -72,16 +73,29 @@ const Index = () => {
     setActiveProject(projectId);
     // Clear selected member when switching projects
     setSelectedMember(null);
-    toast(`Switched to ${projectId === "project-1" ? "Marketing Campaign" : 
-           projectId === "project-2" ? "Website Redesign" : "Mobile App Development"}`);
+    
+    const selectedProject = projects.find(p => p.id === projectId);
+    if (selectedProject) {
+      toast(`Switched to ${selectedProject.name}`);
+    }
   };
 
   const handleMemberSelect = (memberId: string) => {
     setSelectedMember(memberId === selectedMember ? null : memberId);
   };
 
-  const handleCreateProject = () => {
-    // Now handled within the Sidebar component
+  const handleCreateProject = (name: string, description: string) => {
+    if (!name.trim()) return;
+    
+    const newProjectData: Project = {
+      id: `project-${Date.now()}`,
+      name: name,
+      description: description,
+      members: []
+    };
+    
+    setProjects([...projects, newProjectData]);
+    setActiveProject(newProjectData.id);
   };
 
   const handleAddMember = () => {
