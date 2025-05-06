@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import TaskCard, { Task } from './TaskCard';
-import { cn } from '@/lib/utils';
+import TaskCard, { Task } from '@/components/TaskCard';
+import TaskColumnHeader from './column/TaskColumnHeader';
+import TaskColumnContainer from './column/TaskColumnContainer';
+import TaskColumnWrapper from './column/TaskColumnWrapper';
 
 interface TaskColumnProps {
   id: string;
@@ -39,27 +39,18 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
   };
 
   return (
-    <div 
-      className={cn(
-        "task-column transition-colors duration-200",
-        isDraggingOver && "bg-gray-100"
-      )}
+    <TaskColumnWrapper
+      isDraggingOver={isDraggingOver}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-medium text-sm">{title} ({tasks.length})</h2>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-5 w-5 hover:bg-gray-200"
-          onClick={onAddTask}
-        >
-          <PlusCircle className="h-4 w-4" />
-        </Button>
-      </div>
+      <TaskColumnHeader 
+        title={title} 
+        taskCount={tasks.length} 
+        onAddTask={onAddTask} 
+      />
       
-      <div className="tasks-container">
+      <TaskColumnContainer>
         {tasks.map(task => (
           <TaskCard 
             key={task.id} 
@@ -69,8 +60,8 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
             columnId={id}
           />
         ))}
-      </div>
-    </div>
+      </TaskColumnContainer>
+    </TaskColumnWrapper>
   );
 };
 

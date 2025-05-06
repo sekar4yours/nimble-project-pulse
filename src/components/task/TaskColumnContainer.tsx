@@ -1,6 +1,6 @@
 
 import React from 'react';
-import TaskColumn from '@/components/TaskColumn';
+import TaskColumn from './TaskColumn';
 import { TaskWithComments, TaskStatus } from '@/types/task';
 
 interface TaskColumnContainerProps {
