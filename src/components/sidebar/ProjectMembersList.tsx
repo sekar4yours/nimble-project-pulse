@@ -4,15 +4,20 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Users } from "lucide-react";
 import { TeamMember } from "@/types/team";
 import { Project } from "@/types/project";
+import { cn } from "@/lib/utils";
 
 interface ProjectMembersListProps {
   activeProject: Project | null;
   onAddMember: (projectId: string) => void;
+  onSelectMember?: (member: TeamMember) => void;
+  selectedMember?: string | null;
 }
 
 const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
   activeProject,
-  onAddMember
+  onAddMember,
+  onSelectMember,
+  selectedMember
 }) => {
   if (!activeProject) return null;
   
@@ -38,7 +43,11 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
           activeProject.members.map(member => (
             <li 
               key={member.id}
-              className="flex items-center px-2 py-1 text-xs text-muted-foreground"
+              className={cn(
+                "flex items-center px-2 py-1 text-xs rounded-md cursor-pointer",
+                selectedMember === member.id ? "bg-primary text-white" : "hover:bg-secondary text-muted-foreground"
+              )}
+              onClick={() => onSelectMember && onSelectMember(member)}
             >
               <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
                 {member.name.charAt(0)}

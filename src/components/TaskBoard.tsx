@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { TaskStatus, TaskWithComments, TaskComment } from '@/types/task';
 import { TeamMember } from '@/types/team';
@@ -11,9 +12,10 @@ import useTaskManagement from '@/hooks/useTaskManagement';
 interface TaskBoardProps {
   projectId: string;
   teamId: string | null;
+  selectedMember?: string | null;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId, selectedMember }) => {
   const {
     tasks,
     setTasks,
@@ -28,8 +30,31 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
     handleDropOnTeamMember
   } = useTaskManagement(projectId, teamId);
 
-  const filteredTasks = getFilteredTasks();
+  const [filteredTasks, setFilteredTasks] = useState(getFilteredTasks());
   const teamMembers = getTeamMembers();
+
+  // Update filtered tasks when project or selected member changes
+  useEffect(() => {
+    const allTasks = getFilteredTasks();
+    
+    if (selectedMember) {
+      // If a member is selected, filter tasks by assignee
+      const memberName = teamMembers.find(m => m.id === selectedMember)?.name;
+      
+      if (memberName) {
+        const memberFilteredTasks: Record<TaskStatus, TaskWithComments[]> = {
+          'backlog': allTasks.backlog.filter(task => task.assignee === memberName),
+          'in-progress': allTasks['in-progress'].filter(task => task.assignee === memberName),
+          'done': allTasks.done.filter(task => task.assignee === memberName),
+        };
+        setFilteredTasks(memberFilteredTasks);
+      } else {
+        setFilteredTasks(allTasks);
+      }
+    } else {
+      setFilteredTasks(allTasks);
+    }
+  }, [projectId, selectedMember, tasks]);
 
   // Task modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -173,9 +198,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
            projectId === "project-2" ? "Website Redesign" : "Mobile App Development"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {teamId ? `Filtered by ${teamId === "team-1" ? "Design Team" : 
-                    teamId === "team-2" ? "Development Team" : "Marketing Team"}` : 
-                    "Manage tasks by dragging them between columns or to team members"}
+          {selectedMember 
+            ? `Filtered by team member: ${teamMembers.find(m => m.id === selectedMember)?.name || 'Unknown'}`
+            : "Manage tasks by dragging them between columns or to team members"}
         </p>
       </div>
       
@@ -183,6 +208,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
         teamMembers={teamMembers}
         onDropOnTeamMember={handleDropOnTeamMember}
         handleDragOverTeamMember={handleDragOverTeamMember}
+        selectedMember={selectedMember}
       />
       
       <TaskColumnContainer 

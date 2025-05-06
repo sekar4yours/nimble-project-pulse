@@ -8,6 +8,7 @@ import { toast } from "sonner";
 const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Check authentication status on mount
@@ -32,8 +33,14 @@ const Index = () => {
 
   const handleProjectSelect = (projectId: string) => {
     setActiveProject(projectId);
+    // Clear selected member when switching projects
+    setSelectedMember(null);
     toast(`Switched to ${projectId === "project-1" ? "Marketing Campaign" : 
            projectId === "project-2" ? "Website Redesign" : "Mobile App Development"}`);
+  };
+
+  const handleMemberSelect = (memberId: string) => {
+    setSelectedMember(memberId);
   };
 
   const handleCreateProject = () => {
@@ -46,10 +53,12 @@ const Index = () => {
         activeProject={activeProject}
         onProjectSelect={handleProjectSelect}
         onCreateProject={handleCreateProject}
+        onMemberSelect={handleMemberSelect}
       />
       <TaskBoard 
         projectId={activeProject}
         teamId={null} // We no longer use teamId
+        selectedMember={selectedMember}
       />
     </div>
   );

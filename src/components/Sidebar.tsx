@@ -12,17 +12,20 @@ import ProjectMembersList from "./sidebar/ProjectMembersList";
 import UserProfile from "./sidebar/UserProfile";
 import CreateProjectModal from "./sidebar/CreateProjectModal";
 import CreateMemberModal from "./sidebar/CreateMemberModal";
+import InviteMemberModal from "./sidebar/InviteMemberModal";
 
 interface SidebarProps {
   activeProject: string | null;
   onProjectSelect: (projectId: string) => void;
   onCreateProject: () => void;
+  onMemberSelect?: (memberId: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeProject,
   onProjectSelect,
-  onCreateProject
+  onCreateProject,
+  onMemberSelect
 }) => {
   // Sample data - in a real app, this would come from API
   const [projects, setProjects] = useState<Project[]>([
@@ -58,7 +61,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Modal states
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isProjectMemberModalOpen, setIsProjectMemberModalOpen] = useState(false);
+  const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false);
   const [selectedProjectForMember, setSelectedProjectForMember] = useState<Project | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   // Auth state from localStorage
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -129,6 +134,30 @@ const Sidebar: React.FC<SidebarProps> = ({
     toast.success(`${newMember.name} added to ${selectedProjectForMember.name}`);
   };
 
+  const handleInviteMember = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProjectForMember(project);
+      setIsInviteMemberModalOpen(true);
+    }
+  };
+
+  const handleSendInvite = (email: string) => {
+    if (!selectedProjectForMember || !email.trim()) return;
+    
+    // In a real app, this would send an invitation email
+    toast.success(`Invitation sent to ${email}`);
+    setIsInviteMemberModalOpen(false);
+  };
+
+  const handleMemberSelect = (member: TeamMember) => {
+    setSelectedMemberId(member.id);
+    if (onMemberSelect) {
+      onMemberSelect(member.id);
+    }
+    toast.info(`Selected team member: ${member.name}`);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     setIsAuthenticated(false);
@@ -154,7 +183,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           
           <ProjectMembersList 
             activeProject={activeProjectData}
-            onAddMember={handleAddProjectMember}
+            onAddMember={handleInviteMember}
+            onSelectMember={handleMemberSelect}
+            selectedMember={selectedMemberId}
           />
         </div>
       </ScrollArea>
@@ -178,6 +209,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         onClose={() => setIsProjectMemberModalOpen(false)}
         selectedProject={selectedProjectForMember}
         onCreateMember={handleCreateProjectMember}
+      />
+
+      <InviteMemberModal
+        isOpen={isInviteMemberModalOpen}
+        onClose={() => setIsInviteMemberModalOpen(false)}
+        selectedProject={selectedProjectForMember}
+        onSendInvite={handleSendInvite}
       />
     </div>
   );
