@@ -15,6 +15,7 @@ export interface Task {
   tags?: string[];
   projectId?: string;
   createdBy?: string;
+  comments?: { id: string; text: string; author: string; date: string }[];
 }
 
 interface TaskCardProps {
@@ -64,7 +65,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   // Check if task has comments
-  const hasComments = !!('comments' in task && task.comments && task.comments.length > 0);
+  const hasComments = task.comments && task.comments.length > 0;
 
   return (
     <div 
@@ -98,7 +99,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           {hasComments && (
             <div className="flex items-center text-xs text-gray-500">
               <MessageSquare className="w-3 h-3 mr-1" />
-              {(task as any).comments.length}
+              {task.comments.length}
             </div>
           )}
           

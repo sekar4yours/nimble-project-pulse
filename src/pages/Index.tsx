@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
 import { toast } from "sonner";
@@ -7,6 +8,15 @@ import { toast } from "sonner";
 const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
   const [activeTeam, setActiveTeam] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // Check if user is logged in
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (!user) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Load state from localStorage if available
   useEffect(() => {

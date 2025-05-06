@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
-import { PlusCircle, Users, Folder } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PlusCircle, Users, Folder, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 
@@ -89,6 +89,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     email: "",
     role: ""
   });
+  
+  // User state
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const navigate = useNavigate();
+  
+  // Load user data from localStorage
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
 
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return;
@@ -152,6 +164,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     setNewTeamMember({ name: "", email: "", role: "" });
     setIsTeamMemberModalOpen(false);
     toast.success(`${newMember.name} added to ${selectedTeamForMember.name}`);
+  };
+  
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('activeProject');
+    localStorage.removeItem('activeTeam');
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
+  
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.name) return 'U';
+    return user.name.split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
@@ -258,14 +288,24 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium">
-            JD
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium">
+              {getUserInitials()}
+            </div>
+            <div className="text-sm">
+              <div className="font-medium">{user?.name || 'User'}</div>
+              <div className="text-muted-foreground text-xs">{user?.email || 'user@example.com'}</div>
+            </div>
           </div>
-          <div className="text-sm">
-            <div className="font-medium">John Doe</div>
-            <div className="text-muted-foreground text-xs">john@example.com</div>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
