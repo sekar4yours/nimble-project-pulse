@@ -21,6 +21,9 @@ const useDragAndDrop = ({ tasks, setTasks }: UseDragAndDropProps) => {
       taskId,
       fromColumn: fromColumn as TaskStatus
     });
+    
+    // Set data transfer for team member assignment
+    e.dataTransfer.setData('task', taskId);
   };
 
   const handleDragOver = (e: React.DragEvent, columnId: string) => {
@@ -59,31 +62,46 @@ const useDragAndDrop = ({ tasks, setTasks }: UseDragAndDropProps) => {
   // Team member drag and drop
   const handleDragOverTeamMember = (e: React.DragEvent, memberId: string) => {
     e.preventDefault();
+    // Add visual indicator that this is a valid drop target
+    e.currentTarget.classList.add('border-primary');
   };
 
   const handleDropOnTeamMember = (e: React.DragEvent, memberName: string) => {
-    if (!draggedTask) return;
+    // Remove any highlight styling
+    e.currentTarget.classList.remove('border-primary');
     
-    const { taskId, fromColumn } = draggedTask;
-    const fromColumnTyped = fromColumn as TaskStatus;
+    const taskId = e.dataTransfer.getData('task');
+    if (!taskId) return;
     
-    const taskToUpdate = tasks[fromColumnTyped].find(task => task.id === taskId);
-    if (!taskToUpdate) return;
+    // Find the task in any column
+    let taskToUpdate: TaskWithComments | undefined;
+    let taskColumnId: TaskStatus | undefined;
+    
+    Object.keys(tasks).forEach((columnId) => {
+      const column = columnId as TaskStatus;
+      const task = tasks[column].find(t => t.id === taskId);
+      if (task) {
+        taskToUpdate = task;
+        taskColumnId = column;
+      }
+    });
+    
+    if (!taskToUpdate || !taskColumnId) return;
     
     // Update the task with the new assignee
     const updatedTask = { ...taskToUpdate, assignee: memberName };
     
     // Create updated task list
-    const updatedTasks = tasks[fromColumnTyped].map(task => 
+    const updatedTasks = tasks[taskColumnId].map(task => 
       task.id === taskId ? updatedTask : task
     );
     
     setTasks({
       ...tasks,
-      [fromColumnTyped]: updatedTasks
+      [taskColumnId]: updatedTasks
     });
 
-    toast(`Task "${updatedTask.title}" assigned to ${memberName}`);
+    toast.success(`Task "${updatedTask.title}" assigned to ${memberName}`);
   };
 
   return {

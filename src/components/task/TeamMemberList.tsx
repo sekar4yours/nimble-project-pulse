@@ -4,6 +4,8 @@ import { TeamMember } from '@/types/team';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { toast } from 'sonner';
 
 interface TeamMemberListProps {
   teamMembers: TeamMember[];
@@ -27,7 +29,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           key={member.id}
           className={cn(
             "flex flex-col items-center p-2 border rounded-md cursor-pointer transition-colors",
-            selectedMember === member.id ? "border-primary bg-primary-foreground" : "hover:border-primary-foreground"
+            selectedMember === member.id ? "border-primary bg-primary-foreground" : "hover:border-primary-foreground",
+            "relative" // Add relative positioning for drop indicator
           )}
           onDragOver={(e) => handleDragOverTeamMember(e, member.id)}
           onDrop={(e) => onDropOnTeamMember(e, member.name)}
@@ -42,6 +45,11 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           {member.role && (
             <span className="text-xs text-muted-foreground">{member.role}</span>
           )}
+          
+          {/* Visual indicator for drag and drop */}
+          <div className="text-xs text-muted-foreground mt-1 opacity-70">
+            Drop task to assign
+          </div>
         </div>
       ))}
       

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Project } from "@/types/project";
+import { MailPlus } from "lucide-react";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -35,7 +36,8 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <MailPlus className="h-5 w-5" />
             Invite Member to {selectedProject?.name}
           </DialogTitle>
         </DialogHeader>

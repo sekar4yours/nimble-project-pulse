@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 import { MessageSquare } from 'lucide-react';
 import { TaskComment } from '@/types/task';
 
@@ -40,6 +40,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true);
+    
+    // Set data for both column drop and member assignment
+    e.dataTransfer.setData('task', task.id);
+    
     if (onDragStart) {
       onDragStart(e, task.id, columnId);
     }

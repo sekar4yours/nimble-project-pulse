@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface ProjectMembersListProps {
   activeProject: Project | null;
   onAddMember: (projectId: string) => void;
+  onInviteMember?: (projectId: string) => void;
   onSelectMember?: (member: TeamMember) => void;
   selectedMember?: string | null;
 }
@@ -17,6 +18,7 @@ interface ProjectMembersListProps {
 const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
   activeProject,
   onAddMember,
+  onInviteMember,
   onSelectMember,
   selectedMember
 }) => {
@@ -44,8 +46,8 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
             variant="ghost" 
             size="icon" 
             className="h-5 w-5"
-            onClick={() => onAddMember(activeProject.id)}
-            title="Invite Member"
+            onClick={() => onInviteMember ? onInviteMember(activeProject.id) : onAddMember(activeProject.id)}
+            title="Invite Member via Email"
           >
             <UserPlus className="h-4 w-4 text-muted-foreground" />
             <span className="sr-only">Invite Team Member</span>
@@ -65,6 +67,15 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
                   ? "bg-primary text-white" 
                   : "bg-secondary hover:bg-secondary/80"
               )}
+              // Make members droppable for task assignment
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const taskData = e.dataTransfer.getData('task');
+                if (taskData) {
+                  console.log(`Task ${taskData} assigned to ${member.name}`);
+                }
+              }}
             >
               <Avatar className="h-8 w-8 mr-3">
                 <AvatarFallback className="bg-primary/80 text-white">
