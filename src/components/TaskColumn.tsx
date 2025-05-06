@@ -3,6 +3,7 @@ import React from 'react';
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TaskCard, { Task } from './TaskCard';
+import { cn } from '@/lib/utils';
 
 interface TaskColumnProps {
   id: string;
@@ -13,6 +14,7 @@ interface TaskColumnProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, columnId: string) => void;
   onDragStart: (e: React.DragEvent, taskId: string, fromColumn: string) => void;
+  isDraggingOver?: boolean;
 }
 
 const TaskColumn: React.FC<TaskColumnProps> = ({
@@ -23,7 +25,8 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
   onTaskClick,
   onDragOver,
   onDrop,
-  onDragStart
+  onDragStart,
+  isDraggingOver = false
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -37,7 +40,10 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
 
   return (
     <div 
-      className="task-column"
+      className={cn(
+        "task-column transition-colors duration-200",
+        isDraggingOver && "bg-gray-100"
+      )}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >

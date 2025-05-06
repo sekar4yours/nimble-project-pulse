@@ -14,11 +14,11 @@ const Index = () => {
   };
 
   const handleCreateProject = () => {
-    toast("Project creation would open here in a complete app");
+    // Now handled within the Sidebar component
   };
 
   const handleCreateTeam = () => {
-    toast("Team creation would open here in a complete app");
+    // Now handled within the Sidebar component
   };
 
   return (

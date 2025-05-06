@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { cn } from "@/lib/utils";
 
 export type Project = {
@@ -40,6 +42,39 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: "team-3", name: "Marketing Team" }
   ]);
 
+  // Modal states
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+
+  const handleCreateProject = () => {
+    if (!newProjectName.trim()) return;
+    
+    const newProject: Project = {
+      id: `project-${Date.now()}`,
+      name: newProjectName
+    };
+    
+    setProjects([...projects, newProject]);
+    setNewProjectName("");
+    setIsProjectModalOpen(false);
+    onProjectSelect(newProject.id);
+  };
+
+  const handleCreateTeam = () => {
+    if (!newTeamName.trim()) return;
+    
+    const newTeam: Team = {
+      id: `team-${Date.now()}`,
+      name: newTeamName
+    };
+    
+    setTeams([...teams, newTeam]);
+    setNewTeamName("");
+    setIsTeamModalOpen(false);
+  };
+
   return (
     <div className="w-64 h-full bg-sidebar flex flex-col border-r border-border">
       <div className="p-4 border-b border-border">
@@ -54,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               variant="ghost" 
               size="icon" 
               className="h-5 w-5"
-              onClick={onCreateProject}
+              onClick={() => setIsProjectModalOpen(true)}
             >
               <PlusCircle className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -83,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               variant="ghost" 
               size="icon" 
               className="h-5 w-5"
-              onClick={onCreateTeam}
+              onClick={() => setIsTeamModalOpen(true)}
             >
               <PlusCircle className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -113,6 +148,54 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Add Project Modal */}
+      <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="projectName" className="text-sm font-medium">Project Name</label>
+              <Input 
+                id="projectName" 
+                value={newProjectName} 
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="Enter project name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProjectModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateProject}>Create Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Team Modal */}
+      <Dialog open={isTeamModalOpen} onOpenChange={setIsTeamModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="teamName" className="text-sm font-medium">Team Name</label>
+              <Input 
+                id="teamName" 
+                value={newTeamName} 
+                onChange={(e) => setNewTeamName(e.target.value)}
+                placeholder="Enter team name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTeamModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateTeam}>Create Team</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
