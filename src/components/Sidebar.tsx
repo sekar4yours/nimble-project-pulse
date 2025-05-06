@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
-import { PlusCircle } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import TeamMemberModal from './TeamMemberModal';
+import ProjectModal from './ProjectModal';
 
 export type Project = {
   id: string;
@@ -12,6 +14,8 @@ export type Project = {
 export type Team = {
   id: string;
   name: string;
+  email: string;
+  initials: string;
 };
 
 interface SidebarProps {
@@ -19,26 +23,34 @@ interface SidebarProps {
   onProjectSelect: (projectId: string) => void;
   onCreateProject: () => void;
   onCreateTeam: () => void;
+  teams: Team[];
+  projects: Project[];
+  onAddTeamMember: (team: Team) => void;
+  onAddProject: (project: Project) => void;
+  onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeProject, 
   onProjectSelect,
   onCreateProject,
-  onCreateTeam 
+  onCreateTeam,
+  teams,
+  projects,
+  onAddTeamMember,
+  onAddProject,
+  onLogout
 }) => {
-  // Sample data - in a real app, this would come from API
-  const [projects, setProjects] = useState<Project[]>([
-    { id: "project-1", name: "Marketing Campaign" },
-    { id: "project-2", name: "Website Redesign" },
-    { id: "project-3", name: "Mobile App Development" }
-  ]);
-  
-  const [teams, setTeams] = useState<Team[]>([
-    { id: "team-1", name: "Design Team" },
-    { id: "team-2", name: "Development Team" },
-    { id: "team-3", name: "Marketing Team" }
-  ]);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [user, setUser] = useState<{name: string, email: string, initials: string} | null>(null);
+
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      setUser(JSON.parse(userString));
+    }
+  }, []);
 
   return (
     <div className="w-64 h-full bg-sidebar flex flex-col border-r border-border">
@@ -54,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               variant="ghost" 
               size="icon" 
               className="h-5 w-5"
-              onClick={onCreateProject}
+              onClick={() => setIsProjectModalOpen(true)}
             >
               <PlusCircle className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -83,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               variant="ghost" 
               size="icon" 
               className="h-5 w-5"
-              onClick={onCreateTeam}
+              onClick={() => setIsTeamModalOpen(true)}
             >
               <PlusCircle className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -93,9 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             {teams.map(team => (
               <li 
                 key={team.id}
-                className="px-2 py-1.5 text-sm rounded-md hover:bg-secondary cursor-pointer"
+                className="px-2 py-1.5 text-sm rounded-md hover:bg-secondary cursor-pointer flex items-center gap-2"
               >
-                {team.name}
+                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs">
+                  {team.initials}
+                </div>
+                <span>{team.name}</span>
               </li>
             ))}
           </ul>
@@ -103,16 +118,36 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium">
-            JD
-          </div>
-          <div className="text-sm">
-            <div className="font-medium">John Doe</div>
-            <div className="text-muted-foreground text-xs">john@example.com</div>
-          </div>
+        <div className="flex items-center gap-3 mb-2">
+          {user && (
+            <>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium">
+                {user.initials}
+              </div>
+              <div className="text-sm">
+                <div className="font-medium">{user.name}</div>
+                <div className="text-muted-foreground text-xs">{user.email}</div>
+              </div>
+            </>
+          )}
         </div>
+        <Button variant="outline" size="sm" className="w-full mt-2" onClick={onLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
       </div>
+
+      <TeamMemberModal 
+        isOpen={isTeamModalOpen} 
+        onClose={() => setIsTeamModalOpen(false)} 
+        onAddTeamMember={onAddTeamMember}
+      />
+
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        onAddProject={onAddProject}
+      />
     </div>
   );
 };

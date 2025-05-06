@@ -8,14 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Team } from './Sidebar';
 
 type TaskStatus = 'backlog' | 'in-progress' | 'done';
 
 interface TaskBoardProps {
   projectId: string;
+  teams: Team[];
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
+const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teams }) => {
   const [tasks, setTasks] = useState<Record<TaskStatus, Task[]>>({
     'backlog': [
       { 
@@ -23,6 +25,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         title: "Design Landing Page", 
         description: "Create wireframes for the new landing page", 
         assignee: "Alex", 
+        assigneeInitials: "A",
         priority: "high",
         dueDate: "May 10",
         tags: ["design", "ui"]
@@ -32,6 +35,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         title: "Implement User Authentication", 
         description: "Add JWT authentication to the backend", 
         assignee: "Sarah", 
+        assigneeInitials: "S",
         priority: "medium",
         tags: ["backend", "security"]
       }
@@ -42,6 +46,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         title: "API Documentation", 
         description: "Document all API endpoints using Swagger", 
         assignee: "Mike", 
+        assigneeInitials: "M",
         priority: "low",
         dueDate: "May 15"
       }
@@ -52,17 +57,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         title: "Database Schema", 
         description: "Design initial database schema for the project", 
         assignee: "Emily", 
+        assigneeInitials: "E",
         priority: "medium",
         tags: ["database", "architecture"]
       }
     ]
   });
-
-  // Drag and drop state
-  const [draggedTask, setDraggedTask] = useState<{
-    taskId: string;
-    fromColumn: TaskStatus;
-  } | null>(null);
 
   // Task modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -71,41 +71,85 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
     description: '',
     priority: 'medium',
     assignee: '',
+    assigneeId: '',
+    assigneeInitials: '',
   });
   const [targetColumn, setTargetColumn] = useState<TaskStatus>('backlog');
 
+  // Load tasks from localStorage when project changes
+  useEffect(() => {
+    const savedTasks = localStorage.getItem(`tasks-${projectId}`);
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    }
+  }, [projectId]);
+
+  // Save tasks to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem(`tasks-${projectId}`, JSON.stringify(tasks));
+  }, [tasks, projectId]);
+
   const handleDragStart = (e: React.DragEvent, taskId: string, fromColumn: string) => {
-    setDraggedTask({
-      taskId,
-      fromColumn: fromColumn as TaskStatus
-    });
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.setData('fromColumn', fromColumn);
   };
 
   const handleDrop = (e: React.DragEvent, targetColumn: string) => {
-    if (!draggedTask) return;
-    
-    const { taskId, fromColumn } = draggedTask;
-    const fromColumnTyped = fromColumn as TaskStatus;
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const fromColumn = e.dataTransfer.getData('fromColumn') as TaskStatus;
     const targetColumnTyped = targetColumn as TaskStatus;
     
-    if (fromColumnTyped === targetColumnTyped) return;
+    if (fromColumn === targetColumnTyped) return;
     
-    const taskToMove = tasks[fromColumnTyped].find(task => task.id === taskId);
+    const taskToMove = tasks[fromColumn].find(task => task.id === taskId);
     if (!taskToMove) return;
     
     // Remove from source column
-    const updatedSourceColumn = tasks[fromColumnTyped].filter(task => task.id !== taskId);
+    const updatedSourceColumn = tasks[fromColumn].filter(task => task.id !== taskId);
     
     // Add to target column
     const updatedTargetColumn = [...tasks[targetColumnTyped], taskToMove];
     
     setTasks({
       ...tasks,
-      [fromColumnTyped]: updatedSourceColumn,
+      [fromColumn]: updatedSourceColumn,
       [targetColumnTyped]: updatedTargetColumn
     });
 
     toast(`Task "${taskToMove.title}" moved to ${targetColumn.replace('-', ' ')}`);
+  };
+
+  const handleAssignToTeamMember = (e: React.DragEvent, teamMemberId: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const fromColumn = e.dataTransfer.getData('fromColumn') as TaskStatus;
+    
+    const teamMember = teams.find(t => t.id === teamMemberId);
+    if (!teamMember) return;
+    
+    // Find task across all columns
+    const taskToAssign = tasks[fromColumn].find(task => task.id === taskId);
+    if (!taskToAssign) return;
+    
+    // Update task with team member
+    const updatedTask = {
+      ...taskToAssign,
+      assignee: teamMember.name,
+      assigneeId: teamMember.id,
+      assigneeInitials: teamMember.initials
+    };
+    
+    // Update tasks state
+    const updatedTasks = {
+      ...tasks,
+      [fromColumn]: tasks[fromColumn].map(task => 
+        task.id === taskId ? updatedTask : task
+      )
+    };
+    
+    setTasks(updatedTasks);
+    toast(`Task "${taskToAssign.title}" assigned to ${teamMember.name}`);
   };
 
   const handleTaskClick = (taskId: string) => {
@@ -130,6 +174,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
       description: newTask.description,
       priority: newTask.priority as Task['priority'] || 'medium',
       assignee: newTask.assignee,
+      assigneeId: newTask.assigneeId,
+      assigneeInitials: newTask.assigneeInitials,
     };
 
     setTasks({
@@ -144,7 +190,28 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
       description: '',
       priority: 'medium',
       assignee: '',
+      assigneeId: '',
+      assigneeInitials: '',
     });
+  };
+
+  const handleAssigneeChange = (value: string) => {
+    const selectedTeamMember = teams.find(team => team.id === value);
+    if (selectedTeamMember) {
+      setNewTask({
+        ...newTask,
+        assignee: selectedTeamMember.name,
+        assigneeId: selectedTeamMember.id,
+        assigneeInitials: selectedTeamMember.initials
+      });
+    } else {
+      setNewTask({
+        ...newTask,
+        assignee: '',
+        assigneeId: '',
+        assigneeInitials: ''
+      });
+    }
   };
 
   return (
@@ -152,7 +219,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Board View</h1>
         <p className="text-sm text-muted-foreground">
-          Manage tasks by dragging them between columns
+          Manage tasks by dragging them between columns or to team members
         </p>
       </div>
       
@@ -191,6 +258,29 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         />
       </div>
 
+      {/* Team Members Section */}
+      <div className="mt-8 mb-4">
+        <h2 className="text-xl font-semibold mb-4">Team Members</h2>
+        <div className="flex flex-wrap gap-4">
+          {teams.map(team => (
+            <div 
+              key={team.id}
+              className="p-4 border rounded-md flex items-center gap-3 bg-white shadow-sm"
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => handleAssignToTeamMember(e, team.id)}
+            >
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                {team.initials}
+              </div>
+              <div>
+                <div className="font-medium">{team.name}</div>
+                <div className="text-sm text-gray-500">{team.email}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -219,12 +309,20 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="assignee" className="text-sm font-medium">Assignee</label>
-                <Input 
-                  id="assignee" 
-                  value={newTask.assignee} 
-                  onChange={e => setNewTask({...newTask, assignee: e.target.value})}
-                  placeholder="Assignee name"
-                />
+                <Select onValueChange={handleAssigneeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map(team => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{team.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label htmlFor="priority" className="text-sm font-medium">Priority</label>
