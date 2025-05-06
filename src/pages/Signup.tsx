@@ -47,7 +47,14 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      await apiService.register(data);
+      // Ensure we're passing data with all required properties
+      const signupData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password_confirmation
+      };
+      await apiService.register(signupData);
       toast.success("Account created successfully! You can now login.");
       navigate("/login");
     } catch (error) {

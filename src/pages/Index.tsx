@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
@@ -8,6 +7,7 @@ import { TeamMember } from "@/types/team";
 import CreateMemberModal from "@/components/sidebar/CreateMemberModal";
 import InviteMemberModal from "@/components/sidebar/InviteMemberModal";
 import { Project } from "@/types/project";
+import { apiService } from "@/hooks/useApi";
 
 const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
@@ -17,57 +17,74 @@ const Index = () => {
   const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false);
   const [selectedProjectForMember, setSelectedProjectForMember] = useState<Project | null>(null);
   const navigate = useNavigate();
+  
+  // Sample projects - to be replaced with API data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Sample projects - this would be fetched from API in a real app
-  const [projects, setProjects] = useState<Project[]>([
-    { 
-      id: "project-1", 
-      name: "Marketing Campaign",
-      description: "Q2 marketing campaign for product launch",
-      members: [
-        { id: "user-1", name: "Alex" },
-        { id: "user-2", name: "Sarah" }
-      ]
-    },
-    { 
-      id: "project-2", 
-      name: "Website Redesign",
-      description: "Redesign the company website with new branding",
-      members: [
-        { id: "user-3", name: "Mike" },
-        { id: "user-4", name: "Emily" }
-      ]
-    },
-    { 
-      id: "project-3", 
-      name: "Mobile App Development",
-      description: "Develop a mobile app for iOS and Android",
-      members: [
-        { id: "user-2", name: "Sarah" },
-        { id: "user-5", name: "David" }
-      ]
-    }
-  ]);
-
-  // Check authentication status on mount
+  // Check authentication status on mount and fetch projects if authenticated
   useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated');
-    setIsAuthenticated(authStatus === 'true');
-  }, []);
-
-  // Load state from localStorage if available
-  useEffect(() => {
-    const savedProject = localStorage.getItem('activeProject');
+    const checkAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      const authStatus = localStorage.getItem('isAuthenticated');
+      
+      if (token && authStatus === 'true') {
+        setIsAuthenticated(true);
+        try {
+          // Verify token is still valid
+          const userData = await apiService.getCurrentUser();
+          if (!userData) {
+            handleLogout();
+            return;
+          }
+          
+          // Fetch projects
+          await fetchProjects();
+        } catch (error) {
+          console.error("Authentication check failed:", error);
+          handleLogout();
+        }
+      } else {
+        setIsLoading(false);
+        navigate('/login');
+      }
+    };
     
-    if (savedProject) {
-      setActiveProject(savedProject);
-    }
-  }, []);
+    checkAuth();
+  }, [navigate]);
 
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('activeProject', activeProject);
-  }, [activeProject]);
+  const fetchProjects = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiService.getProjects();
+      if (response && response.data) {
+        setProjects(response.data);
+        
+        // If no active project is set or the active project doesn't exist anymore
+        if (response.data.length > 0) {
+          const savedProject = localStorage.getItem('activeProject');
+          const projectExists = response.data.some(p => p.id === savedProject);
+          
+          if (!savedProject || !projectExists) {
+            setActiveProject(response.data[0].id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to load projects. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    setIsAuthenticated(false);
+    navigate('/login');
+  };
 
   const handleProjectSelect = (projectId: string) => {
     setActiveProject(projectId);
@@ -151,6 +168,10 @@ const Index = () => {
   const activeProjectData = projects.find(p => p.id === activeProject) || null;
   const teamMembers = activeProjectData?.members || [];
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar 
@@ -158,6 +179,8 @@ const Index = () => {
         onProjectSelect={handleProjectSelect}
         onCreateProject={handleCreateProject}
         onMemberSelect={handleMemberSelect}
+        isAuthenticated={isAuthenticated}
+        onLogout={handleLogout}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TaskBoard 

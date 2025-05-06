@@ -120,6 +120,7 @@ export const apiService = {
     // Store the token in localStorage for future requests
     localStorage.setItem('auth_token', result.access_token);
     localStorage.setItem('user', JSON.stringify(result.user));
+    localStorage.setItem('isAuthenticated', 'true');
     return result;
   },
 
