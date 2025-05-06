@@ -17,13 +17,17 @@ interface SidebarProps {
   onProjectSelect: (projectId: string) => void;
   onCreateProject: (name: string, description: string) => void;
   onMemberSelect?: (memberId: string) => void;
+  isAuthenticated?: boolean; // Make isAuthenticated optional
+  onLogout?: () => void; // Make onLogout optional
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeProject,
   onProjectSelect,
   onCreateProject,
-  onMemberSelect
+  onMemberSelect,
+  isAuthenticated,
+  onLogout
 }) => {
   const {
     projects,
@@ -35,14 +39,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsInviteMemberModalOpen,
     selectedProjectForMember,
     selectedMemberId,
-    isAuthenticated,
+    isAuthenticated: stateIsAuthenticated,
     handleCreateProject,
     handleAddProjectMember,
     handleCreateProjectMember,
     handleInviteMember,
     handleSendInvite,
     handleMemberSelect,
-    handleLogout
+    handleLogout: stateHandleLogout
   } = useSidebarState(activeProject, onProjectSelect, onMemberSelect);
 
   // Get the currently selected project's details
@@ -53,6 +57,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleAddProject = () => {
     setIsProjectModalOpen(true);
   };
+
+  // Use props if provided, otherwise use from state
+  const effectiveIsAuthenticated = isAuthenticated !== undefined ? isAuthenticated : stateIsAuthenticated;
+  const effectiveOnLogout = onLogout || stateHandleLogout;
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
@@ -82,8 +90,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4 border-t border-sidebar-border mt-auto">
         <UserProfile 
-          isAuthenticated={isAuthenticated}
-          onLogout={handleLogout}
+          isAuthenticated={effectiveIsAuthenticated}
+          onLogout={effectiveOnLogout}
         />
       </div>
 

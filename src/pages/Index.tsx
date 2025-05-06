@@ -8,6 +8,7 @@ import { TeamMember } from "@/types/team";
 import CreateMemberModal from "@/components/sidebar/CreateMemberModal";
 import InviteMemberModal from "@/components/sidebar/InviteMemberModal";
 import { Project } from "@/types/project";
+import { apiService } from "@/hooks/useApi";
 
 const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
@@ -16,9 +17,10 @@ const Index = () => {
   const [isProjectMemberModalOpen, setIsProjectMemberModalOpen] = useState(false);
   const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false);
   const [selectedProjectForMember, setSelectedProjectForMember] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Sample projects - this would be fetched from API in a real app
+  // Sample projects as fallback - this would be fetched from API
   const [projects, setProjects] = useState<Project[]>([
     { 
       id: "project-1", 
@@ -49,10 +51,54 @@ const Index = () => {
     }
   ]);
 
-  // Check authentication status on mount
+  // Check authentication status and fetch projects on mount
   useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated');
-    setIsAuthenticated(authStatus === 'true');
+    const checkAuth = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('auth_token');
+        const authenticated = !!token;
+        setIsAuthenticated(authenticated);
+        
+        if (authenticated) {
+          try {
+            // Fetch user data to verify token is still valid
+            const userData = await apiService.getCurrentUser();
+            if (!userData) {
+              // If getCurrentUser returns null, token is invalid
+              setIsAuthenticated(false);
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('user');
+              return;
+            }
+            
+            // Try to fetch projects from API
+            try {
+              const projectsData = await apiService.getProjects();
+              if (projectsData && projectsData.data) {
+                setProjects(projectsData.data);
+                // Set first project as active if we have projects
+                if (projectsData.data.length > 0) {
+                  setActiveProject(projectsData.data[0].id);
+                }
+              }
+            } catch (projectError) {
+              console.error("Failed to fetch projects:", projectError);
+              toast.error("Failed to load projects. Using sample data.");
+            }
+          } catch (error) {
+            console.error("Auth validation failed:", error);
+            setIsAuthenticated(false);
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   // Load state from localStorage if available
@@ -84,18 +130,27 @@ const Index = () => {
     setSelectedMember(memberId === selectedMember ? null : memberId);
   };
 
-  const handleCreateProject = (name: string, description: string) => {
+  const handleCreateProject = async (name: string, description: string) => {
     if (!name.trim()) return;
     
-    const newProjectData: Project = {
-      id: `project-${Date.now()}`,
-      name: name,
-      description: description,
-      members: []
-    };
-    
-    setProjects([...projects, newProjectData]);
-    setActiveProject(newProjectData.id);
+    try {
+      // Create project via API
+      const response = await apiService.createProject({ name, description });
+      
+      const newProjectData: Project = response.data || {
+        id: `project-${Date.now()}`,
+        name: name,
+        description: description,
+        members: []
+      };
+      
+      setProjects([...projects, newProjectData]);
+      setActiveProject(newProjectData.id);
+      toast.success(`Project "${name}" created successfully`);
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      toast.error("Failed to create project. Please try again.");
+    }
   };
 
   const handleAddMember = () => {
@@ -147,9 +202,29 @@ const Index = () => {
     setIsInviteMemberModalOpen(false);
   };
 
+  const handleLogout = async () => {
+    try {
+      await apiService.logout();
+      setIsAuthenticated(false);
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
+    }
+  };
+
   // Get the current project
   const activeProjectData = projects.find(p => p.id === activeProject) || null;
   const teamMembers = activeProjectData?.members || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -158,6 +233,8 @@ const Index = () => {
         onProjectSelect={handleProjectSelect}
         onCreateProject={handleCreateProject}
         onMemberSelect={handleMemberSelect}
+        isAuthenticated={isAuthenticated}
+        onLogout={handleLogout}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TaskBoard 

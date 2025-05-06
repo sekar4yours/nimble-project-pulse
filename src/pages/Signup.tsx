@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
@@ -34,6 +34,14 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      navigate('/');
+    }
+  }, [navigate]);
+
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -47,9 +55,19 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      await apiService.register(data);
-      toast.success("Account created successfully! You can now login.");
-      navigate("/login");
+      const response = await apiService.register(data);
+      
+      // Optionally auto-login after registration
+      if (response && response.access_token) {
+        localStorage.setItem('auth_token', response.access_token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('isAuthenticated', 'true');
+        toast.success("Account created and logged in!");
+        navigate("/");
+      } else {
+        toast.success("Account created successfully! You can now login.");
+        navigate("/login");
+      }
     } catch (error) {
       toast.error("Signup failed. Please try again.");
       console.error("Signup error:", error);
