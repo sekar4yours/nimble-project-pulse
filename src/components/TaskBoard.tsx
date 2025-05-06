@@ -29,7 +29,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
   } = useTaskManagement(projectId, teamId);
 
   const filteredTasks = getFilteredTasks();
-  const teamMembers = getTeamMembers(teamId);
+  const teamMembers = getTeamMembers();
 
   // Task modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
