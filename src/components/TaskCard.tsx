@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { MessageSquare } from 'lucide-react';
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 
@@ -12,6 +13,8 @@ export interface Task {
   dueDate?: string;
   priority: TaskPriority;
   tags?: string[];
+  projectId?: string;
+  createdBy?: string;
 }
 
 interface TaskCardProps {
@@ -60,10 +63,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  // Check if task has comments
+  const hasComments = !!('comments' in task && task.comments && task.comments.length > 0);
+
   return (
     <div 
       className={cn(
-        "task-card mb-3",
+        "task-card mb-3 p-3 bg-white border rounded-lg shadow-sm hover:shadow transition-all",
         isDragging ? "dragging opacity-50" : "opacity-100"
       )}
       draggable={draggable}
@@ -88,9 +94,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         )}
         
-        {task.dueDate && (
-          <span className="text-xs text-gray-500">{task.dueDate}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {hasComments && (
+            <div className="flex items-center text-xs text-gray-500">
+              <MessageSquare className="w-3 h-3 mr-1" />
+              {(task as any).comments.length}
+            </div>
+          )}
+          
+          {task.dueDate && (
+            <span className="text-xs text-gray-500">{task.dueDate}</span>
+          )}
+        </div>
       </div>
       
       {task.tags && task.tags.length > 0 && (

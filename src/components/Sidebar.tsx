@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Users, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from "@/lib/utils";
+import { toast } from 'sonner';
 
 export type Project = {
   id: string;
@@ -14,18 +16,30 @@ export type Project = {
 export type Team = {
   id: string;
   name: string;
+  members?: TeamMember[];
+};
+
+export type TeamMember = {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
 };
 
 interface SidebarProps {
   activeProject: string | null;
+  activeTeam: string | null;
   onProjectSelect: (projectId: string) => void;
+  onTeamSelect: (teamId: string) => void;
   onCreateProject: () => void;
   onCreateTeam: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeProject, 
+  activeTeam,
   onProjectSelect,
+  onTeamSelect,
   onCreateProject,
   onCreateTeam 
 }) => {
@@ -37,16 +51,44 @@ const Sidebar: React.FC<SidebarProps> = ({
   ]);
   
   const [teams, setTeams] = useState<Team[]>([
-    { id: "team-1", name: "Design Team" },
-    { id: "team-2", name: "Development Team" },
-    { id: "team-3", name: "Marketing Team" }
+    { 
+      id: "team-1", 
+      name: "Design Team",
+      members: [
+        { id: "user-1", name: "Alex" },
+        { id: "user-2", name: "Sarah" }
+      ]
+    },
+    { 
+      id: "team-2", 
+      name: "Development Team",
+      members: [
+        { id: "user-3", name: "Mike" },
+        { id: "user-4", name: "Emily" }
+      ]
+    },
+    { 
+      id: "team-3", 
+      name: "Marketing Team",
+      members: [
+        { id: "user-2", name: "Sarah" },
+        { id: "user-5", name: "David" }
+      ]
+    }
   ]);
 
   // Modal states
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
+  const [selectedTeamForMember, setSelectedTeamForMember] = useState<Team | null>(null);
+  const [newTeamMember, setNewTeamMember] = useState({
+    name: "",
+    email: "",
+    role: ""
+  });
 
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return;
@@ -60,6 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setNewProjectName("");
     setIsProjectModalOpen(false);
     onProjectSelect(newProject.id);
+    toast.success(`Project "${newProject.name}" created`);
   };
 
   const handleCreateTeam = () => {
@@ -67,12 +110,48 @@ const Sidebar: React.FC<SidebarProps> = ({
     
     const newTeam: Team = {
       id: `team-${Date.now()}`,
-      name: newTeamName
+      name: newTeamName,
+      members: []
     };
     
     setTeams([...teams, newTeam]);
     setNewTeamName("");
     setIsTeamModalOpen(false);
+    toast.success(`Team "${newTeam.name}" created`);
+  };
+
+  const handleAddTeamMember = (teamId: string) => {
+    const team = teams.find(t => t.id === teamId);
+    if (team) {
+      setSelectedTeamForMember(team);
+      setIsTeamMemberModalOpen(true);
+    }
+  };
+
+  const handleCreateTeamMember = () => {
+    if (!selectedTeamForMember || !newTeamMember.name.trim()) return;
+
+    const newMember: TeamMember = {
+      id: `user-${Date.now()}`,
+      name: newTeamMember.name,
+      email: newTeamMember.email,
+      role: newTeamMember.role
+    };
+
+    const updatedTeams = teams.map(team => {
+      if (team.id === selectedTeamForMember.id) {
+        return {
+          ...team,
+          members: [...(team.members || []), newMember]
+        };
+      }
+      return team;
+    });
+
+    setTeams(updatedTeams);
+    setNewTeamMember({ name: "", email: "", role: "" });
+    setIsTeamMemberModalOpen(false);
+    toast.success(`${newMember.name} added to ${selectedTeamForMember.name}`);
   };
 
   return (
@@ -84,7 +163,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex flex-col flex-grow overflow-y-auto">
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground">PROJECTS</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <Folder className="mr-2 h-4 w-4 text-muted-foreground" />
+              PROJECTS
+            </h2>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -113,7 +195,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground">TEAMS</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+              TEAMS
+            </h2>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -126,11 +211,46 @@ const Sidebar: React.FC<SidebarProps> = ({
           
           <ul className="space-y-1">
             {teams.map(team => (
-              <li 
-                key={team.id}
-                className="px-2 py-1.5 text-sm rounded-md hover:bg-secondary cursor-pointer"
-              >
-                {team.name}
+              <li key={team.id} className="group">
+                <div 
+                  className={cn(
+                    "px-2 py-1.5 text-sm rounded-md cursor-pointer flex justify-between items-center",
+                    activeTeam === team.id ? "bg-primary text-white" : "hover:bg-secondary"
+                  )}
+                >
+                  <span 
+                    className="flex-grow"
+                    onClick={() => onTeamSelect(team.id)}
+                  >
+                    {team.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity",
+                      activeTeam === team.id ? "text-white" : "text-muted-foreground"
+                    )}
+                    onClick={() => handleAddTeamMember(team.id)}
+                  >
+                    <PlusCircle className="h-3 w-3" />
+                  </Button>
+                </div>
+                {team.members && team.members.length > 0 && activeTeam === team.id && (
+                  <ul className="pl-4 mt-1 space-y-1">
+                    {team.members.map(member => (
+                      <li 
+                        key={member.id}
+                        className="flex items-center px-2 py-1 text-xs text-muted-foreground"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
+                          {member.name.charAt(0)}
+                        </div>
+                        {member.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
@@ -193,6 +313,50 @@ const Sidebar: React.FC<SidebarProps> = ({
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsTeamModalOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateTeam}>Create Team</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Team Member Modal */}
+      <Dialog open={isTeamMemberModalOpen} onOpenChange={setIsTeamMemberModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              Add Member to {selectedTeamForMember?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="memberName" className="text-sm font-medium">Name</label>
+              <Input 
+                id="memberName" 
+                value={newTeamMember.name} 
+                onChange={(e) => setNewTeamMember({...newTeamMember, name: e.target.value})}
+                placeholder="Enter member name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="memberEmail" className="text-sm font-medium">Email</label>
+              <Input 
+                id="memberEmail" 
+                value={newTeamMember.email} 
+                onChange={(e) => setNewTeamMember({...newTeamMember, email: e.target.value})}
+                placeholder="Enter member email"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="memberRole" className="text-sm font-medium">Role</label>
+              <Input 
+                id="memberRole" 
+                value={newTeamMember.role} 
+                onChange={(e) => setNewTeamMember({...newTeamMember, role: e.target.value})}
+                placeholder="Enter member role"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTeamMemberModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateTeamMember}>Add Member</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

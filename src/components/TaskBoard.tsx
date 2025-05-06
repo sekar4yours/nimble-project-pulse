@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import TaskColumn from './TaskColumn';
 import { Task } from './TaskCard';
@@ -8,63 +7,186 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Team, TeamMember } from './Sidebar';
 
 type TaskStatus = 'backlog' | 'in-progress' | 'done';
 
-interface TaskBoardProps {
-  projectId: string;
+export interface TaskComment {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
 }
 
-const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
-  const [tasks, setTasks] = useState<Record<TaskStatus, Task[]>>({
-    'backlog': [
-      { 
-        id: "task-1", 
-        title: "Design Landing Page", 
-        description: "Create wireframes for the new landing page", 
-        assignee: "Alex", 
-        priority: "high",
-        dueDate: "May 10",
-        tags: ["design", "ui"]
-      },
-      { 
-        id: "task-2", 
-        title: "Implement User Authentication", 
-        description: "Add JWT authentication to the backend", 
-        assignee: "Sarah", 
-        priority: "medium",
-        tags: ["backend", "security"]
-      }
-    ],
-    'in-progress': [
-      { 
-        id: "task-3", 
-        title: "API Documentation", 
-        description: "Document all API endpoints using Swagger", 
-        assignee: "Mike", 
-        priority: "low",
-        dueDate: "May 15"
-      }
-    ],
-    'done': [
-      { 
-        id: "task-4", 
-        title: "Database Schema", 
-        description: "Design initial database schema for the project", 
-        assignee: "Emily", 
-        priority: "medium",
-        tags: ["database", "architecture"]
-      }
-    ]
-  });
+export interface TaskWithComments extends Task {
+  comments?: TaskComment[];
+}
+
+interface TaskBoardProps {
+  projectId: string;
+  teamId: string | null;
+}
+
+const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId }) => {
+  // Get tasks from localStorage if available
+  const getInitialTasks = () => {
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      return JSON.parse(savedTasks);
+    }
+    
+    return {
+      'backlog': [
+        { 
+          id: "task-1", 
+          title: "Design Landing Page", 
+          description: "Create wireframes for the new landing page", 
+          assignee: "Alex", 
+          priority: "high",
+          dueDate: "May 10",
+          tags: ["design", "ui"],
+          projectId: "project-1",
+          createdBy: "John Doe",
+          comments: [
+            {
+              id: "comment-1",
+              author: "John Doe",
+              text: "Make sure to use the new brand guidelines.",
+              createdAt: "2023-05-01T10:00:00Z"
+            }
+          ]
+        },
+        { 
+          id: "task-2", 
+          title: "Implement User Authentication", 
+          description: "Add JWT authentication to the backend", 
+          assignee: "Sarah", 
+          priority: "medium",
+          tags: ["backend", "security"],
+          projectId: "project-2",
+          createdBy: "John Doe"
+        }
+      ],
+      'in-progress': [
+        { 
+          id: "task-3", 
+          title: "API Documentation", 
+          description: "Document all API endpoints using Swagger", 
+          assignee: "Mike", 
+          priority: "low",
+          dueDate: "May 15",
+          projectId: "project-1",
+          createdBy: "John Doe"
+        }
+      ],
+      'done': [
+        { 
+          id: "task-4", 
+          title: "Database Schema", 
+          description: "Design initial database schema for the project", 
+          assignee: "Emily", 
+          priority: "medium",
+          tags: ["database", "architecture"],
+          projectId: "project-3",
+          createdBy: "John Doe"
+        }
+      ]
+    };
+  };
+
+  const [tasks, setTasks] = useState<Record<TaskStatus, TaskWithComments[]>>(getInitialTasks());
+
+  // Save tasks to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   // Team members state
-  const [teamMembers, setTeamMembers] = useState([
-    { id: "user-1", name: "Alex" },
-    { id: "user-2", name: "Sarah" },
-    { id: "user-3", name: "Mike" },
-    { id: "user-4", name: "Emily" }
+  const [teams, setTeams] = useState<Team[]>([
+    { 
+      id: "team-1", 
+      name: "Design Team",
+      members: [
+        { id: "user-1", name: "Alex" },
+        { id: "user-2", name: "Sarah" }
+      ]
+    },
+    { 
+      id: "team-2", 
+      name: "Development Team",
+      members: [
+        { id: "user-3", name: "Mike" },
+        { id: "user-4", name: "Emily" }
+      ]
+    },
+    { 
+      id: "team-3", 
+      name: "Marketing Team",
+      members: [
+        { id: "user-2", name: "Sarah" },
+        { id: "user-5", name: "David" }
+      ]
+    }
   ]);
+
+  // Get all team members from all teams
+  const getAllTeamMembers = (): TeamMember[] => {
+    const allMembers: TeamMember[] = [];
+    const uniqueIds = new Set();
+    
+    teams.forEach(team => {
+      if (team.members) {
+        team.members.forEach(member => {
+          if (!uniqueIds.has(member.id)) {
+            allMembers.push(member);
+            uniqueIds.add(member.id);
+          }
+        });
+      }
+    });
+    
+    return allMembers;
+  };
+
+  // Get team members for a specific team
+  const getTeamMembers = (teamId: string | null): TeamMember[] => {
+    if (!teamId) return getAllTeamMembers();
+    
+    const team = teams.find(t => t.id === teamId);
+    return team?.members || [];
+  };
+
+  // Get filtered tasks based on active project and team
+  const getFilteredTasks = () => {
+    const filtered: Record<TaskStatus, TaskWithComments[]> = {
+      'backlog': [],
+      'in-progress': [],
+      'done': []
+    };
+    
+    // Filter by project
+    Object.keys(tasks).forEach(status => {
+      const statusTasks = tasks[status as TaskStatus].filter(task => 
+        (!task.projectId || task.projectId === projectId)
+      );
+      
+      // If team filter is active, filter by team members
+      if (teamId) {
+        const teamMembers = getTeamMembers(teamId);
+        const teamMemberNames = teamMembers.map(m => m.name);
+        
+        filtered[status as TaskStatus] = statusTasks.filter(task => 
+          task.assignee && teamMemberNames.includes(task.assignee)
+        );
+      } else {
+        filtered[status as TaskStatus] = statusTasks;
+      }
+    });
+    
+    return filtered;
+  };
+
+  const filteredTasks = getFilteredTasks();
 
   // Drag and drop state
   const [draggedTask, setDraggedTask] = useState<{
@@ -76,17 +198,23 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
 
   // Task modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState<Partial<Task>>({
+  const [newTask, setNewTask] = useState<Partial<TaskWithComments>>({
     title: '',
     description: '',
     priority: 'medium',
     assignee: '',
+    projectId: projectId,
+    createdBy: 'John Doe'
   });
   const [targetColumn, setTargetColumn] = useState<TaskStatus>('backlog');
 
   // Task details modal state
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskWithComments | null>(null);
+  const [isCurrentUserTaskCreator, setIsCurrentUserTaskCreator] = useState(false);
+  
+  // Comment state
+  const [newComment, setNewComment] = useState('');
 
   const handleDragStart = (e: React.DragEvent, taskId: string, fromColumn: string) => {
     setDraggedTask({
@@ -162,12 +290,23 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
     const task = tasks[columnId].find(t => t.id === taskId);
     if (task) {
       setSelectedTask(task);
+      // Check if current user is the creator of the task
+      setIsCurrentUserTaskCreator(task.createdBy === 'John Doe');
       setIsTaskDetailsOpen(true);
     }
   };
 
   const handleAddTask = (columnId: TaskStatus) => {
     setTargetColumn(columnId);
+    // Reset new task form but keep the project ID
+    setNewTask({
+      title: '',
+      description: '',
+      priority: 'medium',
+      assignee: '',
+      projectId: projectId,
+      createdBy: 'John Doe'
+    });
     setIsTaskModalOpen(true);
   };
 
@@ -178,12 +317,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
     }
 
     const taskId = `task-${Date.now()}`;
-    const createdTask: Task = {
+    const createdTask: TaskWithComments = {
       id: taskId,
       title: newTask.title,
       description: newTask.description,
       priority: newTask.priority as Task['priority'] || 'medium',
       assignee: newTask.assignee,
+      projectId: projectId,
+      createdBy: 'John Doe',
+      comments: []
     };
 
     setTasks({
@@ -193,18 +335,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
 
     toast.success(`Task "${createdTask.title}" created`);
     setIsTaskModalOpen(false);
-    setNewTask({
-      title: '',
-      description: '',
-      priority: 'medium',
-      assignee: '',
-    });
   };
 
   const handleUpdateTask = () => {
     if (!selectedTask) return;
     
-    const { id, title, description, priority, assignee } = selectedTask;
+    const { id } = selectedTask;
     const columnId = Object.keys(tasks).find(column => 
       tasks[column as TaskStatus].some(task => task.id === id)
     ) as TaskStatus;
@@ -220,21 +356,78 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
       [columnId]: updatedTasks
     });
     
-    toast.success(`Task "${title}" updated`);
+    toast.success(`Task "${selectedTask.title}" updated`);
     setIsTaskDetailsOpen(false);
+  };
+
+  const handleAddComment = () => {
+    if (!selectedTask || !newComment.trim()) return;
+    
+    const comment: TaskComment = {
+      id: `comment-${Date.now()}`,
+      author: 'John Doe',
+      text: newComment,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Find which column the task is in
+    const columnId = Object.keys(tasks).find(column => 
+      tasks[column as TaskStatus].some(task => task.id === selectedTask.id)
+    ) as TaskStatus;
+    
+    if (!columnId) return;
+    
+    // Create updated task with new comment
+    const updatedTask = {
+      ...selectedTask,
+      comments: [...(selectedTask.comments || []), comment]
+    };
+    
+    // Update tasks state
+    const updatedTasks = tasks[columnId].map(task => 
+      task.id === selectedTask.id ? updatedTask : task
+    );
+    
+    setTasks({
+      ...tasks,
+      [columnId]: updatedTasks
+    });
+    
+    // Update selected task with new comment
+    setSelectedTask(updatedTask);
+    setNewComment('');
+    
+    toast.success('Comment added');
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
   return (
     <div className="flex-1 p-6 overflow-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Board View</h1>
+        <h1 className="text-2xl font-bold">
+          {projectId === "project-1" ? "Marketing Campaign" : 
+           projectId === "project-2" ? "Website Redesign" : "Mobile App Development"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Manage tasks by dragging them between columns or to team members
+          {teamId ? `Filtered by ${teamId === "team-1" ? "Design Team" : 
+                    teamId === "team-2" ? "Development Team" : "Marketing Team"}` : 
+                    "Manage tasks by dragging them between columns or to team members"}
         </p>
       </div>
       
       <div className="flex gap-6 mb-6">
-        {teamMembers.map(member => (
+        {getTeamMembers(teamId).map(member => (
           <div
             key={member.id}
             className="flex flex-col items-center p-2 border rounded-md cursor-pointer"
@@ -253,7 +446,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         <TaskColumn
           id="backlog"
           title="Backlog"
-          tasks={tasks.backlog}
+          tasks={filteredTasks.backlog}
           onAddTask={() => handleAddTask('backlog')}
           onTaskClick={(taskId) => handleTaskClick(taskId, 'backlog')}
           onDragOver={(e) => handleDragOver(e, 'backlog')}
@@ -265,7 +458,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         <TaskColumn
           id="in-progress"
           title="In Progress"
-          tasks={tasks['in-progress']}
+          tasks={filteredTasks['in-progress']}
           onAddTask={() => handleAddTask('in-progress')}
           onTaskClick={(taskId) => handleTaskClick(taskId, 'in-progress')}
           onDragOver={(e) => handleDragOver(e, 'in-progress')}
@@ -277,7 +470,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
         <TaskColumn
           id="done"
           title="Done"
-          tasks={tasks.done}
+          tasks={filteredTasks.done}
           onAddTask={() => handleAddTask('done')}
           onTaskClick={(taskId) => handleTaskClick(taskId, 'done')}
           onDragOver={(e) => handleDragOver(e, 'done')}
@@ -324,7 +517,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teamMembers.map(member => (
+                    {getTeamMembers(teamId).map(member => (
                       <SelectItem key={member.id} value={member.name}>
                         {member.name}
                       </SelectItem>
@@ -359,7 +552,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
 
       {/* Task Details Dialog */}
       <Dialog open={isTaskDetailsOpen} onOpenChange={setIsTaskDetailsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Task Details</DialogTitle>
           </DialogHeader>
@@ -371,6 +564,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                   id="taskTitle" 
                   value={selectedTask.title} 
                   onChange={e => setSelectedTask({...selectedTask, title: e.target.value})}
+                  readOnly={!isCurrentUserTaskCreator}
+                  className={!isCurrentUserTaskCreator ? "bg-gray-100" : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -380,6 +575,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                   value={selectedTask.description} 
                   onChange={e => setSelectedTask({...selectedTask, description: e.target.value})}
                   rows={3}
+                  readOnly={!isCurrentUserTaskCreator}
+                  className={!isCurrentUserTaskCreator ? "bg-gray-100" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -388,12 +585,13 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                   <Select 
                     value={selectedTask.assignee || ""} 
                     onValueChange={(value) => setSelectedTask({...selectedTask, assignee: value})}
+                    disabled={!isCurrentUserTaskCreator}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select assignee" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teamMembers.map(member => (
+                      {getTeamMembers(teamId).map(member => (
                         <SelectItem key={member.id} value={member.name}>
                           {member.name}
                         </SelectItem>
@@ -406,6 +604,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                   <Select 
                     value={selectedTask.priority} 
                     onValueChange={value => setSelectedTask({...selectedTask, priority: value as Task['priority']})}
+                    disabled={!isCurrentUserTaskCreator}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select priority" />
@@ -418,6 +617,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                   </Select>
                 </div>
               </div>
+              
               {selectedTask.dueDate && (
                 <div className="space-y-2">
                   <label htmlFor="taskDueDate" className="text-sm font-medium">Due Date</label>
@@ -425,9 +625,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                     id="taskDueDate" 
                     value={selectedTask.dueDate} 
                     onChange={e => setSelectedTask({...selectedTask, dueDate: e.target.value})}
+                    readOnly={!isCurrentUserTaskCreator}
+                    className={!isCurrentUserTaskCreator ? "bg-gray-100" : ""}
                   />
                 </div>
               )}
+              
               {selectedTask.tags && (
                 <div className="space-y-2">
                   <label htmlFor="taskTags" className="text-sm font-medium">Tags</label>
@@ -436,14 +639,58 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId }) => {
                     value={selectedTask.tags.join(", ")} 
                     onChange={e => setSelectedTask({...selectedTask, tags: e.target.value.split(",").map(tag => tag.trim())})}
                     placeholder="Separate tags with commas"
+                    readOnly={!isCurrentUserTaskCreator}
+                    className={!isCurrentUserTaskCreator ? "bg-gray-100" : ""}
                   />
                 </div>
               )}
+              
+              {/* Task Comments */}
+              <div className="mt-6 border-t pt-4">
+                <h3 className="text-sm font-medium mb-3">Comments</h3>
+                <div className="space-y-4 mb-4 max-h-64 overflow-y-auto">
+                  {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                    selectedTask.comments.map(comment => (
+                      <div key={comment.id} className="bg-gray-50 p-3 rounded-md">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs mr-2">
+                              {comment.author.charAt(0)}
+                            </div>
+                            <span className="font-medium text-sm">{comment.author}</span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-2 pl-10">{comment.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No comments yet.</p>
+                  )}
+                </div>
+                
+                {/* Add Comment */}
+                <div className="flex gap-2">
+                  <Textarea 
+                    placeholder="Add a comment..." 
+                    className="flex-1"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  />
+                  <Button onClick={handleAddComment} disabled={!newComment.trim()}>
+                    Reply
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTaskDetailsOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateTask}>Update Task</Button>
+            <Button variant="outline" onClick={() => setIsTaskDetailsOpen(false)}>Close</Button>
+            {isCurrentUserTaskCreator && (
+              <Button onClick={handleUpdateTask}>Update Task</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
