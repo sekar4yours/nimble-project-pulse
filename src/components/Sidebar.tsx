@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export type Project = {
   id: string;
@@ -203,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
-                <Folder className="mr-2 h-4 w-4 text-muted-foreground" />
+                <FolderKanban className="mr-2 h-4 w-4 text-muted-foreground" />
                 PROJECTS
               </h2>
               <Button 
