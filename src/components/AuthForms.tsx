@@ -11,13 +11,15 @@ interface AuthFormsProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: AuthMode;
+  onAuthSuccess?: () => void;
 }
 
-const AuthForms: React.FC<AuthFormsProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+const AuthForms: React.FC<AuthFormsProps> = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,16 +34,42 @@ const AuthForms: React.FC<AuthFormsProps> = ({ isOpen, onClose, initialMode = 'l
       // Mock successful login
       toast.success("Successfully logged in");
       localStorage.setItem('isAuthenticated', 'true');
+      
+      // Create user initials if name is not provided
+      const userInitials = email.substring(0, 2).toUpperCase();
+      const userName = name || email.split('@')[0];
+      
       localStorage.setItem('user', JSON.stringify({
-        name: "John Doe",
+        name: userName,
         email: email,
-        initials: "JD"
+        initials: userInitials
       }));
+      
+      if (onAuthSuccess) {
+        onAuthSuccess();
+      }
+      
       onClose();
-      window.location.reload();
     } else if (mode === 'signup') {
+      // Create initials from name or email
+      const userInitials = name 
+        ? name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2) 
+        : email.substring(0, 2).toUpperCase();
+      
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('user', JSON.stringify({
+        name: name || email.split('@')[0],
+        email: email,
+        initials: userInitials
+      }));
+      
       toast.success("Account created successfully");
-      setMode('login');
+      
+      if (onAuthSuccess) {
+        onAuthSuccess();
+      }
+      
+      onClose();
     } else if (mode === 'forgot') {
       toast.success("Password reset link sent to your email");
       setMode('login');
@@ -63,6 +91,19 @@ const AuthForms: React.FC<AuthFormsProps> = ({ isOpen, onClose, initialMode = 'l
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {mode === 'signup' && (
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">Full Name</label>
+              <Input 
+                id="name" 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+              />
+            </div>
+          )}
+          
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
             <Input 
