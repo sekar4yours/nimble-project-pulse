@@ -30,11 +30,15 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     return projectId;
   };
 
+  // Add getTeamMembers as an alias for getProjectMembers for backwards compatibility
+  const getTeamMembers = getProjectMembers;
+
   return {
     tasks,
     setTasks,
     getFilteredTasks,
     getProjectMembers,
+    getTeamMembers, // Add this to fix the error
     draggedTask,
     draggingOver,
     handleDragStart,
