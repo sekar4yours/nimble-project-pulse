@@ -121,3 +121,11 @@
 .draggable-task.dragging {
   @apply opacity-60;
 }
+
+.team-member-drop-area {
+  @apply border-2 border-dashed border-gray-300 hover:border-primary transition-colors;
+}
+
+.team-member-drop-area.drag-over {
+  @apply border-primary bg-blue-50;
+}

@@ -9,6 +9,8 @@ export interface Task {
   title: string;
   description: string;
   assignee?: string;
+  assigneeId?: string;
+  assigneeInitials?: string;
   dueDate?: string;
   priority: TaskPriority;
   tags?: string[];
@@ -35,6 +37,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true);
+    e.dataTransfer.setData('taskId', task.id);
+    e.dataTransfer.setData('fromColumn', columnId);
     if (onDragStart) {
       onDragStart(e, task.id, columnId);
     }
@@ -70,6 +74,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={onClick}
+      id={`task-${task.id}`}
     >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-medium text-sm">{task.title}</h3>
@@ -82,7 +87,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         {task.assignee && (
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-white text-xs">
-              {task.assignee.charAt(0)}
+              {task.assigneeInitials || task.assignee.charAt(0)}
             </div>
             <span className="text-xs text-gray-500">{task.assignee}</span>
           </div>
