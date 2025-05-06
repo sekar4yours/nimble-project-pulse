@@ -15,7 +15,7 @@ import useSidebarState from "@/hooks/useSidebarState";
 interface SidebarProps {
   activeProject: string | null;
   onProjectSelect: (projectId: string) => void;
-  onCreateProject: () => void;
+  onCreateProject: (name: string, description: string) => void;
   onMemberSelect?: (memberId: string) => void;
 }
 
@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         isInviteMemberModalOpen={isInviteMemberModalOpen}
         setIsInviteMemberModalOpen={setIsInviteMemberModalOpen}
         selectedProjectForMember={selectedProjectForMember}
-        onCreateProject={handleCreateProject}
+        onCreateProject={onCreateProject}
         onCreateMember={handleCreateProjectMember}
         onSendInvite={handleSendInvite}
       />
