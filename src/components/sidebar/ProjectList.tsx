@@ -49,11 +49,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
             <div className="flex justify-between items-center">
               <span className="flex-grow truncate">{project.name}</span>
             </div>
-            {project.description && (
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {project.description}
-              </p>
-            )}
           </li>
         ))}
       </ul>

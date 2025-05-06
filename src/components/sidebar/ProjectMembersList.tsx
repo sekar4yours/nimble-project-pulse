@@ -90,10 +90,6 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
                   <span className="text-xs opacity-80">{member.role}</span>
                 )}
               </div>
-              {/* Visual indicator for drag and drop */}
-              <div className="text-xs text-muted-foreground ml-auto opacity-70">
-                Drop to assign
-              </div>
             </li>
           ))
         ) : (
