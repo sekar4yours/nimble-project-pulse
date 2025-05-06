@@ -9,7 +9,6 @@ const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot'>('login');
   
   const [projects, setProjects] = useState<Project[]>([
     { id: "project-1", name: "Marketing Campaign" },
@@ -74,47 +73,16 @@ const Index = () => {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setIsAuthModalOpen(true);
-    setAuthMode('login');
     toast.info("Logged out successfully");
-  };
-
-  const handleLogin = () => {
-    setIsAuthModalOpen(true);
-    setAuthMode('login');
-  };
-
-  const handleSignup = () => {
-    setIsAuthModalOpen(true);
-    setAuthMode('signup');
-  };
-
-  const handleForgotPassword = () => {
-    setIsAuthModalOpen(true);
-    setAuthMode('forgot');
-  };
-
-  const handleAuthSuccess = () => {
-    setIsAuthenticated(true);
-    setIsAuthModalOpen(false);
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-screen bg-gray-100 items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Project Pulse</h1>
-            <p className="text-muted-foreground mt-2">Manage your projects with ease</p>
-          </div>
-          
-          <AuthForms 
-            isOpen={isAuthModalOpen} 
-            onClose={() => {}} // Prevent closing if not authenticated
-            initialMode={authMode}
-            onAuthSuccess={handleAuthSuccess}
-          />
-        </div>
-      </div>
+      <AuthForms 
+        isOpen={isAuthModalOpen} 
+        onClose={() => {}} // Prevent closing if not authenticated
+        initialMode="login"
+      />
     );
   }
 
@@ -130,9 +98,6 @@ const Index = () => {
         onAddTeamMember={handleAddTeamMember}
         onAddProject={handleAddProject}
         onLogout={handleLogout}
-        onLogin={handleLogin}
-        onSignup={handleSignup}
-        onForgotPassword={handleForgotPassword}
       />
       <TaskBoard 
         projectId={activeProject} 
