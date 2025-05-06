@@ -39,12 +39,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      // Ensure we're passing data with the required properties
-      const loginData = {
-        email: data.email,
-        password: data.password
-      };
-      await apiService.login(loginData);
+      await apiService.login(data);
       toast.success("Login successful!");
       navigate("/");
     } catch (error) {
