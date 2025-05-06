@@ -1,0 +1,68 @@
+
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: projectmanager-app
+    container_name: projectmanager-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - projectmanager-network
+    depends_on:
+      - mysql
+
+  nginx:
+    image: nginx:alpine
+    container_name: projectmanager-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - projectmanager-network
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: projectmanager-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-projectmanagement}
+      MYSQL_USER: ${DB_USERNAME:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+    volumes:
+      - projectmanager-mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - projectmanager-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: projectmanager-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    networks:
+      - projectmanager-network
+    depends_on:
+      - mysql
+
+networks:
+  projectmanager-network:
+    driver: bridge
+
+volumes:
+  projectmanager-mysql:
+    driver: local
