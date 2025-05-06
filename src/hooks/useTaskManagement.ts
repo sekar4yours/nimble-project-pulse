@@ -25,18 +25,24 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     getProjectMembers 
   });
 
+  const handleAddProjectMember = () => {
+    // This function will be implemented in the parent component
+    return projectId;
+  };
+
   return {
     tasks,
     setTasks,
     getFilteredTasks,
-    getTeamMembers: getProjectMembers,
+    getProjectMembers,
     draggedTask,
     draggingOver,
     handleDragStart,
     handleDragOver,
     handleDrop,
     handleDragOverTeamMember,
-    handleDropOnTeamMember
+    handleDropOnTeamMember,
+    handleAddProjectMember
   };
 };
 

@@ -32,6 +32,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           onClick={onAddProject}
         >
           <PlusCircle className="h-4 w-4 text-muted-foreground" />
+          <span className="sr-only">Add Project</span>
         </Button>
       </div>
       

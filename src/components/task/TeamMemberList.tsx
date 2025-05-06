@@ -2,22 +2,26 @@
 import React from 'react';
 import { TeamMember } from '@/types/team';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 interface TeamMemberListProps {
   teamMembers: TeamMember[];
   onDropOnTeamMember: (e: React.DragEvent, memberName: string) => void;
   handleDragOverTeamMember: (e: React.DragEvent, memberId: string) => void;
   selectedMember?: string | null;
+  onAddMember?: () => void;
 }
 
 const TeamMemberList: React.FC<TeamMemberListProps> = ({
   teamMembers,
   onDropOnTeamMember,
   handleDragOverTeamMember,
-  selectedMember
+  selectedMember,
+  onAddMember
 }) => {
   return (
-    <div className="flex gap-6 mb-6">
+    <div className="flex gap-4 mb-6 items-center">
       {teamMembers.map(member => (
         <div
           key={member.id}
@@ -40,6 +44,18 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           )}
         </div>
       ))}
+      
+      {onAddMember && (
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="w-10 h-10 rounded-full border-dashed"
+          onClick={onAddMember}
+        >
+          <PlusCircle className="h-5 w-5 text-muted-foreground" />
+          <span className="sr-only">Add member</span>
+        </Button>
+      )}
     </div>
   );
 };
