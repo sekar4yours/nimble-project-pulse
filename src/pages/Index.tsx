@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
 import { toast } from "sonner";
-import TeamMemberList from "@/components/task/TeamMemberList";
 import { TeamMember } from "@/types/team";
 import CreateMemberModal from "@/components/sidebar/CreateMemberModal";
 import InviteMemberModal from "@/components/sidebar/InviteMemberModal";
@@ -140,15 +138,6 @@ const Index = () => {
         onMemberSelect={handleMemberSelect}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b">
-          <TeamMemberList
-            teamMembers={teamMembers}
-            selectedMember={selectedMember}
-            handleDragOverTeamMember={() => {}}  // These will be connected to the TaskBoard
-            onDropOnTeamMember={() => {}}
-            onAddMember={handleAddMember}
-          />
-        </div>
         <TaskBoard 
           projectId={activeProject}
           teamId={null}

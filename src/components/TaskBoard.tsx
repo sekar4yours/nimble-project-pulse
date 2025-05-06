@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { TaskStatus, TaskWithComments, TaskComment } from '@/types/task';
 import { TeamMember } from '@/types/team';
 import TaskColumnContainer from './task/TaskColumnContainer';
-import TeamMemberList from './task/TeamMemberList';
 import CreateTaskModal from './task/CreateTaskModal';
 import TaskDetailsModal from './task/TaskDetailsModal';
 import useTaskManagement from '@/hooks/useTaskManagement';
@@ -200,16 +198,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, teamId, selectedMember
         <p className="text-sm text-muted-foreground">
           {selectedMember 
             ? `Filtered by team member: ${teamMembers.find(m => m.id === selectedMember)?.name || 'Unknown'}`
-            : "Manage tasks by dragging them between columns or to team members"}
+            : "Manage tasks by dragging them between columns"}
         </p>
       </div>
-      
-      <TeamMemberList 
-        teamMembers={teamMembers}
-        onDropOnTeamMember={handleDropOnTeamMember}
-        handleDragOverTeamMember={handleDragOverTeamMember}
-        selectedMember={selectedMember}
-      />
       
       <TaskColumnContainer 
         filteredTasks={filteredTasks}
