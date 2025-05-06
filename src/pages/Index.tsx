@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
@@ -145,8 +144,6 @@ const Index = () => {
         onProjectSelect={handleProjectSelect}
         onCreateProject={handleCreateProject}
         onMemberSelect={handleMemberSelect}
-        onAddMember={handleAddMember}
-        onInviteMember={handleInviteMember}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TaskBoard 
