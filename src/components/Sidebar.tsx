@@ -28,9 +28,6 @@ interface SidebarProps {
   onAddTeamMember: (team: Team) => void;
   onAddProject: (project: Project) => void;
   onLogout: () => void;
-  onLogin?: () => void;
-  onSignup?: () => void;
-  onForgotPassword?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -42,10 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   projects,
   onAddTeamMember,
   onAddProject,
-  onLogout,
-  onLogin,
-  onSignup,
-  onForgotPassword
+  onLogout
 }) => {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
