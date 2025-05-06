@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PlusCircle, UserPlus, Users } from "lucide-react";
 import { TeamMember } from "@/types/team";
 import { Project } from "@/types/project";
 import { cn } from "@/lib/utils";
@@ -28,43 +29,60 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
           <Users className="mr-2 h-4 w-4 text-muted-foreground" />
           PROJECT MEMBERS
         </h2>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-5 w-5"
-          onClick={() => onAddMember(activeProject.id)}
-        >
-          <PlusCircle className="h-4 w-4 text-muted-foreground" />
-          <span className="sr-only">Add Member</span>
-        </Button>
+        <div className="flex space-x-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-5 w-5"
+            onClick={() => onAddMember(activeProject.id)}
+            title="Add Member"
+          >
+            <PlusCircle className="h-4 w-4 text-muted-foreground" />
+            <span className="sr-only">Add Member</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-5 w-5"
+            onClick={() => onAddMember(activeProject.id)}
+            title="Invite Member"
+          >
+            <UserPlus className="h-4 w-4 text-muted-foreground" />
+            <span className="sr-only">Invite Team Member</span>
+          </Button>
+        </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 pl-2">
+      <ul className="space-y-1 pl-2">
         {activeProject.members && activeProject.members.length > 0 ? (
           activeProject.members.map(member => (
-            <div
+            <li 
               key={member.id}
               onClick={() => onSelectMember && onSelectMember(member)}
               className={cn(
-                "flex flex-col items-center p-2 rounded-md cursor-pointer transition-colors text-center",
+                "flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors",
                 selectedMember === member.id 
                   ? "bg-primary text-white" 
                   : "bg-secondary hover:bg-secondary/80"
               )}
             >
-              <div className="w-8 h-8 rounded-full bg-primary/80 flex items-center justify-center text-white font-medium mb-1">
-                {member.name.charAt(0)}
+              <Avatar className="h-8 w-8 mr-3">
+                <AvatarFallback className="bg-primary/80 text-white">
+                  {member.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{member.name}</span>
+                {member.role && (
+                  <span className="text-xs opacity-80">{member.role}</span>
+                )}
               </div>
-              <span className="text-xs font-medium truncate w-full">{member.name}</span>
-              {member.role && (
-                <span className="text-xs opacity-80 truncate w-full">{member.role}</span>
-              )}
-            </div>
+            </li>
           ))
         ) : (
-          <div className="col-span-2 text-xs text-muted-foreground py-2">No members yet</div>
+          <li className="text-xs text-muted-foreground py-2 px-2">No members yet</li>
         )}
-      </div>
+      </ul>
     </div>
   );
 };
