@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MessageSquare } from 'lucide-react';
+import { TaskComment } from '@/types/task';
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 
@@ -15,6 +16,7 @@ export interface Task {
   tags?: string[];
   projectId?: string;
   createdBy?: string;
+  comments?: TaskComment[];
 }
 
 interface TaskCardProps {
@@ -98,7 +100,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           {hasComments && (
             <div className="flex items-center text-xs text-gray-500">
               <MessageSquare className="w-3 h-3 mr-1" />
-              {(task as any).comments.length}
+              {task.comments?.length}
             </div>
           )}
           
