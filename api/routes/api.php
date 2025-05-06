@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProjectController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\TaskController;
+use App\Http\Controllers\API\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,12 @@ use App\Http\Controllers\API\TaskController;
 
 // Public routes
 Route::prefix('v1')->group(function () {
+    // Authentication
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
+
     // Projects
     Route::apiResource('projects', ProjectController::class);
     
@@ -33,9 +40,10 @@ Route::prefix('v1')->group(function () {
     Route::get('projects/{project}/tasks', [ProjectController::class, 'tasks']);
 });
 
-// Protected routes (add auth middleware as needed)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+// Protected routes
+Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/update-password', [AuthController::class, 'updatePassword']);
 });
+

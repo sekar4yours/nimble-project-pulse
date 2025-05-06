@@ -92,6 +92,125 @@ export function useApi<T>(options: ApiOptions): ApiResponse<T> {
 
 // Helper functions for common API operations
 export const apiService = {
+  // Authentication
+  register: async (data: { name: string, email: string, password: string, password_confirmation: string }) => {
+    const response = await fetch(`${API_BASE_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Registration failed');
+    }
+    return response.json();
+  },
+
+  login: async (data: { email: string, password: string }) => {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Login failed');
+    }
+    const result = await response.json();
+    // Store the token in localStorage for future requests
+    localStorage.setItem('auth_token', result.access_token);
+    localStorage.setItem('user', JSON.stringify(result.user));
+    return result;
+  },
+
+  logout: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    const response = await fetch(`${API_BASE_URL}/logout`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    // Clear local storage regardless of response
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Logout failed');
+    }
+    
+    return response.json();
+  },
+
+  forgotPassword: async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to send password reset email');
+    }
+    return response.json();
+  },
+
+  resetPassword: async (data: { token: string, email: string, password: string, password_confirmation: string }) => {
+    const response = await fetch(`${API_BASE_URL}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Password reset failed');
+    }
+    return response.json();
+  },
+
+  updatePassword: async (data: { current_password: string, password: string, password_confirmation: string }) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE_URL}/update-password`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Password update failed');
+    }
+    return response.json();
+  },
+
+  getCurrentUser: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return null;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/user`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to get user data');
+      return response.json();
+    } catch (error) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      return null;
+    }
+  },
+  
   // Projects
   getProjects: async () => {
     const response = await fetch(`${API_BASE_URL}/projects`);
@@ -158,4 +277,10 @@ export const apiService = {
     if (!response.ok) throw new Error('Failed to update task');
     return response.json();
   }
+};
+
+// Add authorization header to all requests if token exists
+export const getAuthHeader = () => {
+  const token = localStorage.getItem('auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
 };

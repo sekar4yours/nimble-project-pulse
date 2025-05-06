@@ -13,6 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { apiService } from "@/hooks/useApi";
 
 // Login form schema
 const loginSchema = z.object({
@@ -38,16 +39,11 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      // For now, we'll just simulate a login
-      console.log("Login attempt with:", data);
-      
-      // Simulate an API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await apiService.login(data);
       toast.success("Login successful!");
       navigate("/");
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      toast.error("Login failed. Please check your credentials and try again.");
       console.error("Login error:", error);
     } finally {
       setIsSubmitting(false);
@@ -116,6 +112,11 @@ const Login = () => {
                   </FormItem>
                 )}
               />
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Logging in..." : "Login"}
               </Button>

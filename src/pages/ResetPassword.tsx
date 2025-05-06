@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
   CardContent, CardFooter 
@@ -15,10 +15,8 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { apiService } from "@/hooks/useApi";
 
-// Signup form schema
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+// Reset password form schema
+const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   password_confirmation: z.string(),
 }).refine(data => data.password === data.password_confirmation, {
@@ -26,33 +24,62 @@ const signupSchema = z.object({
   path: ["password_confirmation"],
 });
 
-type SignupFormValues = z.infer<typeof signupSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
-const Signup = () => {
+const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const email = searchParams.get('email');
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      name: "",
-      email: "",
       password: "",
       password_confirmation: "",
     },
   });
 
-  const onSubmit = async (data: SignupFormValues) => {
+  // If token or email is missing, show error
+  if (!token || !email) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Invalid Reset Link</CardTitle>
+            <CardDescription className="text-center">
+              The password reset link is invalid or has expired.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/forgot-password">Request a new reset link</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const onSubmit = async (data: ResetPasswordFormValues) => {
     try {
       setIsSubmitting(true);
-      await apiService.register(data);
-      toast.success("Account created successfully! You can now login.");
+      await apiService.resetPassword({
+        token,
+        email,
+        password: data.password,
+        password_confirmation: data.password_confirmation
+      });
+      
+      toast.success("Password reset successful. You can now login with your new password.");
       navigate("/login");
     } catch (error) {
-      toast.error("Signup failed. Please try again.");
-      console.error("Signup error:", error);
+      toast.error("Failed to reset password. Please try again.");
+      console.error("Password reset error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -62,9 +89,9 @@ const Signup = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Reset Password</CardTitle>
           <CardDescription className="text-center">
-            Enter your information to create an account
+            Create a new password for your account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -72,44 +99,10 @@ const Signup = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="John Doe" 
-                        {...field} 
-                        autoComplete="name"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="your.email@example.com" 
-                        {...field} 
-                        autoComplete="email"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -142,7 +135,7 @@ const Signup = () => {
                 name="password_confirmation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>Confirm New Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -171,16 +164,16 @@ const Signup = () => {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating account..." : "Create account"}
+                {isSubmitting ? "Resetting password..." : "Reset password"}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-center text-gray-500">
-            Already have an account?{" "}
+            Remember your password?{" "}
             <Link to="/login" className="text-blue-600 hover:underline">
-              Login
+              Back to login
             </Link>
           </div>
         </CardFooter>
@@ -189,4 +182,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default ResetPassword;
