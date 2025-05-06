@@ -4,10 +4,11 @@ import useTaskStorage from './useTaskStorage';
 import useProjectData from './useProjectData';
 import useDragAndDrop from './useDragAndDrop';
 import useTaskFilters from './useTaskFilters';
+import useTeamMembers from './useTeamMembers';
 
 const useTaskManagement = (projectId: string, teamId: string | null) => {
   const { tasks, setTasks } = useTaskStorage();
-  const { projects, setProjects, getProjectMembers } = useProjectData(projectId);
+  const { projects, getProjectMembers } = useProjectData(projectId);
   
   const { 
     draggedTask, 
@@ -25,20 +26,14 @@ const useTaskManagement = (projectId: string, teamId: string | null) => {
     getProjectMembers 
   });
 
-  const handleAddProjectMember = () => {
-    // This function will be implemented in the parent component
-    return projectId;
-  };
-
-  // Add getTeamMembers as an alias for getProjectMembers for backwards compatibility
-  const getTeamMembers = getProjectMembers;
+  const { getTeamMembers, handleAddProjectMember } = useTeamMembers(projectId, getProjectMembers);
 
   return {
     tasks,
     setTasks,
     getFilteredTasks,
     getProjectMembers,
-    getTeamMembers, // Add this to fix the error
+    getTeamMembers,
     draggedTask,
     draggingOver,
     handleDragStart,
