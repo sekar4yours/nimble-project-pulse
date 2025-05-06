@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
 import { toast } from "sonner";
@@ -7,6 +8,14 @@ import { toast } from "sonner";
 const Index = () => {
   const [activeProject, setActiveProject] = useState<string>("project-1");
   const [activeTeam, setActiveTeam] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const navigate = useNavigate();
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated');
+    setIsAuthenticated(authStatus === 'true');
+  }, []);
 
   // Load state from localStorage if available
   useEffect(() => {

@@ -1,12 +1,30 @@
-
-import React, { useState } from 'react';
-import { PlusCircle, Users, Folder } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from "@/lib/utils";
-import { toast } from 'sonner';
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  PlusCircle, 
+  Users, 
+  User, 
+  Settings, 
+  LogOut,
+  FolderKanban
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export type Project = {
   id: string;
@@ -90,6 +108,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     role: ""
   });
 
+  // Add isAuthenticated state (for demo purposes)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check localStorage for authentication status on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return;
     
@@ -154,119 +183,152 @@ const Sidebar: React.FC<SidebarProps> = ({
     toast.success(`${newMember.name} added to ${selectedTeamForMember.name}`);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setIsAuthenticated(false);
+    toast.success('Logged out successfully');
+  };
+
   return (
-    <div className="w-64 h-full bg-sidebar flex flex-col border-r border-border">
-      <div className="p-4 border-b border-border">
-        <h1 className="text-xl font-bold text-primary">Project Pulse</h1>
+    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+      <div className="p-4 border-b border-sidebar-border">
+        <h1 className="text-xl font-semibold text-sidebar-foreground flex items-center gap-2">
+          <FolderKanban className="h-5 w-5" /> Project Pulse
+        </h1>
       </div>
-      
-      <div className="flex flex-col flex-grow overflow-y-auto">
+
+      <ScrollArea className="flex-1">
         <div className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
-              <Folder className="mr-2 h-4 w-4 text-muted-foreground" />
-              PROJECTS
-            </h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5"
-              onClick={() => setIsProjectModalOpen(true)}
-            >
-              <PlusCircle className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-          
-          <ul className="space-y-1">
-            {projects.map(project => (
-              <li 
-                key={project.id}
-                className={cn(
-                  "px-2 py-1.5 text-sm rounded-md cursor-pointer",
-                  activeProject === project.id ? "bg-primary text-white" : "hover:bg-secondary"
-                )}
-                onClick={() => onProjectSelect(project.id)}
+          {/* Projects Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <Folder className="mr-2 h-4 w-4 text-muted-foreground" />
+                PROJECTS
+              </h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5"
+                onClick={() => setIsProjectModalOpen(true)}
               >
-                {project.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
-              <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-              TEAMS
-            </h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5"
-              onClick={() => setIsTeamModalOpen(true)}
-            >
-              <PlusCircle className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-          
-          <ul className="space-y-1">
-            {teams.map(team => (
-              <li key={team.id} className="group">
-                <div 
+                <PlusCircle className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
+            
+            <ul className="space-y-1">
+              {projects.map(project => (
+                <li 
+                  key={project.id}
                   className={cn(
-                    "px-2 py-1.5 text-sm rounded-md cursor-pointer flex justify-between items-center",
-                    activeTeam === team.id ? "bg-primary text-white" : "hover:bg-secondary"
+                    "px-2 py-1.5 text-sm rounded-md cursor-pointer",
+                    activeProject === project.id ? "bg-primary text-white" : "hover:bg-secondary"
                   )}
+                  onClick={() => onProjectSelect(project.id)}
                 >
-                  <span 
-                    className="flex-grow"
-                    onClick={() => onTeamSelect(team.id)}
-                  >
-                    {team.name}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  {project.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Teams Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-muted-foreground flex items-center">
+                <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                TEAMS
+              </h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5"
+                onClick={() => setIsTeamModalOpen(true)}
+              >
+                <PlusCircle className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
+            
+            <ul className="space-y-1">
+              {teams.map(team => (
+                <li key={team.id} className="group">
+                  <div 
                     className={cn(
-                      "h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity",
-                      activeTeam === team.id ? "text-white" : "text-muted-foreground"
+                      "px-2 py-1.5 text-sm rounded-md cursor-pointer flex justify-between items-center",
+                      activeTeam === team.id ? "bg-primary text-white" : "hover:bg-secondary"
                     )}
-                    onClick={() => handleAddTeamMember(team.id)}
                   >
-                    <PlusCircle className="h-3 w-3" />
-                  </Button>
-                </div>
-                {team.members && team.members.length > 0 && activeTeam === team.id && (
-                  <ul className="pl-4 mt-1 space-y-1">
-                    {team.members.map(member => (
-                      <li 
-                        key={member.id}
-                        className="flex items-center px-2 py-1 text-xs text-muted-foreground"
-                      >
-                        <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
-                          {member.name.charAt(0)}
-                        </div>
-                        {member.name}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium">
-            JD
+                    <span 
+                      className="flex-grow"
+                      onClick={() => onTeamSelect(team.id)}
+                    >
+                      {team.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity",
+                        activeTeam === team.id ? "text-white" : "text-muted-foreground"
+                      )}
+                      onClick={() => handleAddTeamMember(team.id)}
+                    >
+                      <PlusCircle className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  {team.members && team.members.length > 0 && activeTeam === team.id && (
+                    <ul className="pl-4 mt-1 space-y-1">
+                      {team.members.map(member => (
+                        <li 
+                          key={member.id}
+                          className="flex items-center px-2 py-1 text-xs text-muted-foreground"
+                        >
+                          <div className="w-4 h-4 rounded-full bg-secondary flex items-center justify-center text-xs mr-2">
+                            {member.name.charAt(0)}
+                          </div>
+                          {member.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="text-sm">
-            <div className="font-medium">John Doe</div>
-            <div className="text-muted-foreground text-xs">john@example.com</div>
-          </div>
         </div>
+      </ScrollArea>
+
+      <div className="p-4 border-t border-sidebar-border mt-auto">
+        {isAuthenticated ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gray-300 rounded-full w-8 h-8 flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Demo User</p>
+                <p className="text-xs text-gray-500">demo@example.com</p>
+              </div>
+            </div>
+            <div className="flex">
+              <Button variant="ghost" size="icon" title="Settings">
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" title="Logout" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Link to="/login">
+              <Button variant="default" className="w-full">Login</Button>
+            </Link>
+            <Link to="/signup">
+              <Button variant="outline" className="w-full">Sign Up</Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Add Project Modal */}
