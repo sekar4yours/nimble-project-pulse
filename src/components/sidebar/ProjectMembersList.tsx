@@ -6,6 +6,7 @@ import { PlusCircle, UserPlus, Users } from "lucide-react";
 import { TeamMember } from "@/types/team";
 import { Project } from "@/types/project";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProjectMembersListProps {
   activeProject: Project | null;
@@ -71,9 +72,10 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                const taskData = e.dataTransfer.getData('task');
-                if (taskData) {
-                  console.log(`Task ${taskData} assigned to ${member.name}`);
+                const taskId = e.dataTransfer.getData('task');
+                if (taskId) {
+                  console.log(`Task ${taskId} assigned to ${member.name}`);
+                  toast.success(`Task assigned to ${member.name}`);
                 }
               }}
             >
@@ -87,6 +89,10 @@ const ProjectMembersList: React.FC<ProjectMembersListProps> = ({
                 {member.role && (
                   <span className="text-xs opacity-80">{member.role}</span>
                 )}
+              </div>
+              {/* Visual indicator for drag and drop */}
+              <div className="text-xs text-muted-foreground ml-auto opacity-70">
+                Drop to assign
               </div>
             </li>
           ))
