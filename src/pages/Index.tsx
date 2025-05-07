@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import TaskBoard from "@/components/TaskBoard";
@@ -8,52 +8,48 @@ import { TeamMember } from "@/types/team";
 import CreateMemberModal from "@/components/sidebar/CreateMemberModal";
 import InviteMemberModal from "@/components/sidebar/InviteMemberModal";
 import { Project } from "@/types/project";
+import useApi from "@/hooks/useApi";
+import { AuthContext } from "@/App";
 
 const Index = () => {
-  const [activeProject, setActiveProject] = useState<string>("project-1");
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [activeProject, setActiveProject] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [isProjectMemberModalOpen, setIsProjectMemberModalOpen] = useState(false);
   const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false);
   const [selectedProjectForMember, setSelectedProjectForMember] = useState<Project | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  
   const navigate = useNavigate();
-
-  // Sample projects - this would be fetched from API in a real app
-  const [projects, setProjects] = useState<Project[]>([
-    { 
-      id: "project-1", 
-      name: "Marketing Campaign",
-      description: "Q2 marketing campaign for product launch",
-      members: [
-        { id: "user-1", name: "Alex" },
-        { id: "user-2", name: "Sarah" }
-      ]
-    },
-    { 
-      id: "project-2", 
-      name: "Website Redesign",
-      description: "Redesign the company website with new branding",
-      members: [
-        { id: "user-3", name: "Mike" },
-        { id: "user-4", name: "Emily" }
-      ]
-    },
-    { 
-      id: "project-3", 
-      name: "Mobile App Development",
-      description: "Develop a mobile app for iOS and Android",
-      members: [
-        { id: "user-2", name: "Sarah" },
-        { id: "user-5", name: "David" }
-      ]
-    }
-  ]);
+  const auth = useContext(AuthContext);
+  const api = useApi();
 
   // Check authentication status on mount
   useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated');
-    setIsAuthenticated(authStatus === 'true');
-  }, []);
+    if (!auth?.isAuthenticated) {
+      navigate('/login');
+    } else {
+      // Fetch user data, projects and tasks
+      fetchInitialData();
+    }
+  }, [auth?.isAuthenticated]);
+
+  // Fetch all data after login
+  const fetchInitialData = async () => {
+    setLoading(true);
+    const result = await api.fetchUserData();
+    
+    if (result.success && result.data) {
+      setProjects(result.data.projects || []);
+      
+      // Set first project as active if available
+      if (result.data.projects && result.data.projects.length > 0) {
+        setActiveProject(result.data.projects[0].id);
+      }
+    }
+    
+    setLoading(false);
+  };
 
   // Load state from localStorage if available
   useEffect(() => {
@@ -66,10 +62,12 @@ const Index = () => {
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('activeProject', activeProject);
+    if (activeProject) {
+      localStorage.setItem('activeProject', activeProject);
+    }
   }, [activeProject]);
 
-  const handleProjectSelect = (projectId: string) => {
+  const handleProjectSelect = async (projectId: string) => {
     setActiveProject(projectId);
     // Clear selected member when switching projects
     setSelectedMember(null);
@@ -84,18 +82,19 @@ const Index = () => {
     setSelectedMember(memberId === selectedMember ? null : memberId);
   };
 
-  const handleCreateProject = (name: string, description: string) => {
+  const handleCreateProject = async (name: string, description: string) => {
     if (!name.trim()) return;
     
-    const newProjectData: Project = {
-      id: `project-${Date.now()}`,
-      name: name,
-      description: description,
-      members: []
-    };
+    const result = await api.createProject(name, description);
     
-    setProjects([...projects, newProjectData]);
-    setActiveProject(newProjectData.id);
+    if (result.success && result.data) {
+      // Refresh projects list
+      const projectsResult = await api.fetchProjects();
+      if (projectsResult.success && projectsResult.data) {
+        setProjects(projectsResult.data);
+        setActiveProject(result.data.id);
+      }
+    }
   };
 
   const handleAddMember = () => {
@@ -114,29 +113,22 @@ const Index = () => {
     }
   };
 
-  const handleCreateProjectMember = (name: string, email: string, role: string) => {
+  const handleCreateProjectMember = async (name: string, email: string, role: string) => {
     if (!selectedProjectForMember) return;
 
-    const newMember: TeamMember = {
-      id: `user-${Date.now()}`,
-      name: name,
-      email: email,
-      role: role
-    };
-
-    const updatedProjects = projects.map(project => {
-      if (project.id === selectedProjectForMember.id) {
-        return {
-          ...project,
-          members: [...(project.members || []), newMember]
-        };
+    // For this endpoint, we're only using email since the user must already exist
+    const result = await api.addProjectMember(selectedProjectForMember.id, email, role);
+    
+    if (result.success) {
+      // Refresh projects to get updated members
+      const projectsResult = await api.fetchProjects();
+      if (projectsResult.success && projectsResult.data) {
+        setProjects(projectsResult.data);
       }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    setIsProjectMemberModalOpen(false);
-    toast.success(`${newMember.name} added to ${selectedProjectForMember.name}`);
+      
+      setIsProjectMemberModalOpen(false);
+      toast.success(`${email} added to ${selectedProjectForMember.name}`);
+    }
   };
 
   const handleSendInvite = (email: string) => {
@@ -147,9 +139,16 @@ const Index = () => {
     setIsInviteMemberModalOpen(false);
   };
 
-  // Get the current project
-  const activeProjectData = projects.find(p => p.id === activeProject) || null;
-  const teamMembers = activeProjectData?.members || [];
+  if (loading && projects.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">Loading your projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -161,7 +160,7 @@ const Index = () => {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TaskBoard 
-          projectId={activeProject}
+          projectId={activeProject || ''}
           teamId={null}
           selectedMember={selectedMember}
         />

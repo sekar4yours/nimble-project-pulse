@@ -98,3 +98,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
     }
 }
+
+// Add member to project
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'add_member') {
+    $userId = getAuthUserId();
+    $data = getRequestData();
+    
+    if (!$userId) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Unauthorized"
+        ]);
+        exit;
+    }
+    
+    if (!isset($data['project_id']) || !isset($data['email'])) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Project ID and email are required"
+        ]);
+        exit;
+    }
+    
+    try {
+        $projectId = $data['project_id'];
+        $email = $data['email'];
+        $role = $data['role'] ?? 'member';
+        
+        // Check if the user is a member with owner role in the project
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM project_members 
+            WHERE project_id = ? AND user_id = ? AND role = 'owner'
+        ");
+        $stmt->execute([$projectId, $userId]);
+        
+        if ($stmt->fetchColumn() === 0) {
+            echo json_encode([
+                "success" => false,
+                "message" => "You don't have permission to add members to this project"
+            ]);
+            exit;
+        }
+        
+        // Check if the user with the given email exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $newMemberId = $stmt->fetchColumn();
+        
+        if (!$newMemberId) {
+            echo json_encode([
+                "success" => false,
+                "message" => "User with this email does not exist"
+            ]);
+            exit;
+        }
+        
+        // Check if the user is already a member of the project
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM project_members 
+            WHERE project_id = ? AND user_id = ?
+        ");
+        $stmt->execute([$projectId, $newMemberId]);
+        
+        if ($stmt->fetchColumn() > 0) {
+            echo json_encode([
+                "success" => false,
+                "message" => "User is already a member of this project"
+            ]);
+            exit;
+        }
+        
+        // Add the user to the project
+        $stmt = $pdo->prepare("
+            INSERT INTO project_members (project_id, user_id, role) 
+            VALUES (?, ?, ?)
+        ");
+        $stmt->execute([$projectId, $newMemberId, $role]);
+        
+        // Get the user details to return
+        $stmt = $pdo->prepare("SELECT id, name, email FROM users WHERE id = ?");
+        $stmt->execute([$newMemberId]);
+        $newMember = $stmt->fetch(PDO::FETCH_ASSOC);
+        $newMember['role'] = $role;
+        
+        echo json_encode([
+            "success" => true,
+            "data" => $newMember
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Failed to add member: " . $e->getMessage()
+        ]);
+    }
+}
