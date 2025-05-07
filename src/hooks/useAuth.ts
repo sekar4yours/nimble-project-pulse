@@ -58,12 +58,12 @@ const useAuth = () => {
       }
 
       // Store the token and user data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userData', JSON.stringify(data.user));
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('userData', JSON.stringify(data.data.user));
       localStorage.setItem('isAuthenticated', 'true');
       
       setIsAuthenticated(true);
-      setUser(data.user);
+      setUser(data.data.user);
       
       return { success: true, data };
     } catch (error) {

@@ -13,7 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import useAuth from "@/hooks/useAuth";
+import useAuth, { SignupCredentials } from "@/hooks/useAuth";
 
 // Signup form schema
 const signupSchema = z.object({
@@ -39,7 +39,14 @@ const Signup = () => {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
-    const result = await signup(data);
+    // Cast form data to SignupCredentials to ensure it has the required fields
+    const credentials: SignupCredentials = {
+      name: data.name,
+      email: data.email,
+      password: data.password
+    };
+    
+    const result = await signup(credentials);
     
     if (result.success) {
       toast.success("Account created successfully! You can now login.");
