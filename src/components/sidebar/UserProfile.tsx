@@ -26,6 +26,11 @@ const UserProfile: React.FC<UserProfileProps> = ({
     );
   }
 
+  // Get user data from localStorage
+  const userData = localStorage.getItem('userData') ? 
+    JSON.parse(localStorage.getItem('userData') || '{}') : 
+    { name: 'Demo User', email: 'demo@example.com' };
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
@@ -33,8 +38,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
           <User className="h-4 w-4 text-gray-600" />
         </div>
         <div>
-          <p className="text-sm font-medium">Demo User</p>
-          <p className="text-xs text-gray-500">demo@example.com</p>
+          <p className="text-sm font-medium">{userData.name}</p>
+          <p className="text-xs text-gray-500">{userData.email}</p>
         </div>
       </div>
       <div className="flex">

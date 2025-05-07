@@ -13,6 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
 
 // Login form schema
 const loginSchema = z.object({
@@ -25,7 +26,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, loading: isSubmitting } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -36,21 +37,13 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    try {
-      setIsSubmitting(true);
-      // For now, we'll just simulate a login
-      console.log("Login attempt with:", data);
-      
-      // Simulate an API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    const result = await login(data);
+    
+    if (result.success) {
       toast.success("Login successful!");
       navigate("/");
-    } catch (error) {
-      toast.error("Login failed. Please try again.");
-      console.error("Login error:", error);
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      toast.error(result.error || "Login failed. Please try again.");
     }
   };
 
