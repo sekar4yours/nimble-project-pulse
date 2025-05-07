@@ -55,11 +55,17 @@ const Signup = () => {
   const onSubmit = async (data: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      const response = await apiService.register(data);
+      // Fix: Now explicitly passing all required fields
+      const response = await apiService.register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password_confirmation
+      });
       
       // Optionally auto-login after registration
-      if (response && response.access_token) {
-        localStorage.setItem('auth_token', response.access_token);
+      if (response && response.token) {
+        localStorage.setItem('auth_token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem('isAuthenticated', 'true');
         toast.success("Account created and logged in!");

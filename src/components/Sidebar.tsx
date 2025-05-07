@@ -3,7 +3,6 @@ import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FolderKanban } from "lucide-react";
 import { Project } from "@/types/project";
-import { TeamMember } from "@/types/team";
 
 // Import our components
 import ProjectList from "./sidebar/ProjectList";
@@ -17,8 +16,8 @@ interface SidebarProps {
   onProjectSelect: (projectId: string) => void;
   onCreateProject: (name: string, description: string) => void;
   onMemberSelect?: (memberId: string) => void;
-  isAuthenticated?: boolean; // Make isAuthenticated optional
-  onLogout?: () => void; // Make onLogout optional
+  isAuthenticated?: boolean;
+  onLogout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -79,12 +78,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             onAddProject={handleAddProject}
           />
           
-          <ProjectMembersList 
-            activeProject={activeProjectData}
-            onAddMember={handleInviteMember}
-            onSelectMember={handleMemberSelect}
-            selectedMember={selectedMemberId}
-          />
+          {effectiveIsAuthenticated && (
+            <ProjectMembersList 
+              activeProject={activeProjectData}
+              onAddMember={handleInviteMember}
+              onSelectMember={handleMemberSelect}
+              selectedMember={selectedMemberId}
+            />
+          )}
         </div>
       </ScrollArea>
 

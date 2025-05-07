@@ -58,8 +58,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
           <User className="h-4 w-4 text-gray-600" />
         </div>
         <div>
-          <p className="text-sm font-medium">{userData?.name || 'Loading...'}</p>
-          <p className="text-xs text-gray-500">{userData?.email || 'Loading...'}</p>
+          <p className="text-sm font-medium">{userData?.name || 'User'}</p>
+          <p className="text-xs text-gray-500">{userData?.email || 'user@example.com'}</p>
         </div>
       </div>
       <div className="flex">

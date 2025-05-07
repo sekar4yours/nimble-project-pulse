@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -47,12 +46,11 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      const response = await apiService.login(data);
-      
-      // Store auth data in localStorage
-      localStorage.setItem('auth_token', response.access_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      localStorage.setItem('isAuthenticated', 'true');
+      // Fix: Now explicitly passing both email and password as required by the type
+      const response = await apiService.login({
+        email: data.email,
+        password: data.password
+      });
       
       toast.success("Login successful!");
       navigate("/");
