@@ -17,7 +17,6 @@ echo json_encode([
     "endpoints" => [
         "/login.php" => "User authentication",
         "/signup.php" => "User registration",
-        "/user_data.php" => "Get all user data after login",
         "/projects.php" => "Project management",
         "/tasks.php" => "Task management"
     ]
