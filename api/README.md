@@ -1,62 +1,70 @@
 
-# Project Management API
+# Basic PHP API for Project Management
 
-This is a Laravel-based RESTful API for the Project Management application.
+This directory contains basic PHP files that handle API requests from the React frontend.
 
 ## Setup Instructions
 
-1. Clone the repository
-2. Navigate to the API directory: `cd api`
-3. Copy .env.example to .env: `cp .env.example .env`
-4. Start Docker containers: `docker-compose up -d`
-5. Enter the app container: `docker exec -it projectmanager-app bash`
-6. Install dependencies: `composer install`
-7. Generate application key: `php artisan key:generate`
-8. Run migrations: `php artisan migrate`
-9. (Optional) Seed the database: `php artisan db:seed`
+1. Place these PHP files in a web server directory (e.g., Apache, Nginx)
+2. Make sure PHP is installed and configured
+3. Set up a MySQL database for user and project data
+4. Update the database connection details in `db_connect.php`
 
-## API Endpoints
+## Required PHP Files
+
+You'll need to create the following PHP files:
+
+### Database Connection
+- `db_connect.php` - Contains database connection logic
+
+### Authentication
+- `register.php` - Handles user registration
+- `login.php` - Handles user login and returns authentication token
+- `logout.php` - Handles user logout
+- `user.php` - Returns current user data
+- `forgot-password.php` - Handles password reset requests
+- `reset-password.php` - Processes password reset
+- `update-password.php` - Updates user password
 
 ### Projects
-- GET /api/v1/projects - List all projects
-- POST /api/v1/projects - Create a new project
-- GET /api/v1/projects/{id} - Get a specific project
-- PUT /api/v1/projects/{id} - Update a project
-- DELETE /api/v1/projects/{id} - Delete a project
-- GET /api/v1/projects/{id}/members - Get project members
-- POST /api/v1/projects/{id}/members - Add member to project
-- DELETE /api/v1/projects/{id}/members/{memberId} - Remove member from project
-- GET /api/v1/projects/{id}/tasks - Get project tasks
+- `projects.php` - Lists all projects
+- `project.php` - Gets a single project by ID
+- `project-create.php` - Creates a new project
+- `project-tasks.php` - Lists tasks for a specific project
 
 ### Members
-- GET /api/v1/members - List all members
-- POST /api/v1/members - Create a new member
-- GET /api/v1/members/{id} - Get a specific member
-- PUT /api/v1/members/{id} - Update a member
-- DELETE /api/v1/members/{id} - Delete a member
+- `members.php` - Lists all members
+- `add-project-member.php` - Adds a member to a project
 
 ### Tasks
-- GET /api/v1/tasks - List all tasks
-- POST /api/v1/tasks - Create a new task
-- GET /api/v1/tasks/{id} - Get a specific task
-- PUT /api/v1/tasks/{id} - Update a task
-- DELETE /api/v1/tasks/{id} - Delete a task
+- `create-task.php` - Creates a new task
+- `update-task.php` - Updates an existing task
 
-## Integration with React Frontend
+## API Response Format
 
-Example of connecting the React frontend to this API:
+All API endpoints should return JSON responses in the following format:
 
-```typescript
-// Example of fetching projects from the API
-const fetchProjects = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/api/v1/projects');
-    const data = await response.json();
-    if (data.status === 'success') {
-      setProjects(data.data);
-    }
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-  }
-};
+For successful responses:
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+For error responses:
+```json
+{
+  "success": false,
+  "message": "Error description"
+}
+```
+
+## Authentication
+
+The API uses Bearer token authentication. The token should be included in the 
+Authorization header of protected requests:
+
+```
+Authorization: Bearer <token>
 ```
