@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -46,7 +47,6 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      // Fix: Now explicitly passing both email and password as required by the type
       const response = await apiService.login({
         email: data.email,
         password: data.password
