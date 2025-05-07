@@ -3,6 +3,7 @@ import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FolderKanban } from "lucide-react";
 import { Project } from "@/types/project";
+import { TeamMember } from "@/types/team";
 
 // Import our components
 import ProjectList from "./sidebar/ProjectList";
@@ -16,17 +17,13 @@ interface SidebarProps {
   onProjectSelect: (projectId: string) => void;
   onCreateProject: (name: string, description: string) => void;
   onMemberSelect?: (memberId: string) => void;
-  isAuthenticated?: boolean;
-  onLogout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeProject,
   onProjectSelect,
   onCreateProject,
-  onMemberSelect,
-  isAuthenticated,
-  onLogout
+  onMemberSelect
 }) => {
   const {
     projects,
@@ -38,14 +35,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsInviteMemberModalOpen,
     selectedProjectForMember,
     selectedMemberId,
-    isAuthenticated: stateIsAuthenticated,
+    isAuthenticated,
     handleCreateProject,
     handleAddProjectMember,
     handleCreateProjectMember,
     handleInviteMember,
     handleSendInvite,
     handleMemberSelect,
-    handleLogout: stateHandleLogout
+    handleLogout
   } = useSidebarState(activeProject, onProjectSelect, onMemberSelect);
 
   // Get the currently selected project's details
@@ -56,10 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleAddProject = () => {
     setIsProjectModalOpen(true);
   };
-
-  // Use props if provided, otherwise use from state
-  const effectiveIsAuthenticated = isAuthenticated !== undefined ? isAuthenticated : stateIsAuthenticated;
-  const effectiveOnLogout = onLogout || stateHandleLogout;
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
@@ -78,21 +71,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             onAddProject={handleAddProject}
           />
           
-          {effectiveIsAuthenticated && (
-            <ProjectMembersList 
-              activeProject={activeProjectData}
-              onAddMember={handleInviteMember}
-              onSelectMember={handleMemberSelect}
-              selectedMember={selectedMemberId}
-            />
-          )}
+          <ProjectMembersList 
+            activeProject={activeProjectData}
+            onAddMember={handleInviteMember}
+            onSelectMember={handleMemberSelect}
+            selectedMember={selectedMemberId}
+          />
         </div>
       </ScrollArea>
 
       <div className="p-4 border-t border-sidebar-border mt-auto">
         <UserProfile 
-          isAuthenticated={effectiveIsAuthenticated}
-          onLogout={effectiveOnLogout}
+          isAuthenticated={isAuthenticated}
+          onLogout={handleLogout}
         />
       </div>
 

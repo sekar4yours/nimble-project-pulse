@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
@@ -13,17 +13,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import { apiService } from "@/hooks/useApi";
 
 // Signup form schema
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  password_confirmation: z.string(),
-}).refine(data => data.password === data.password_confirmation, {
-  message: "Passwords don't match",
-  path: ["password_confirmation"],
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -31,16 +26,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 const Signup = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      navigate('/');
-    }
-  }, [navigate]);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -48,32 +34,20 @@ const Signup = () => {
       name: "",
       email: "",
       password: "",
-      password_confirmation: "",
     },
   });
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      // Fix: Now explicitly passing all required fields
-      const response = await apiService.register({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        password_confirmation: data.password_confirmation
-      });
+      // For now, we'll just simulate a signup
+      console.log("Signup attempt with:", data);
       
-      // Optionally auto-login after registration
-      if (response && response.token) {
-        localStorage.setItem('auth_token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem('isAuthenticated', 'true');
-        toast.success("Account created and logged in!");
-        navigate("/");
-      } else {
-        toast.success("Account created successfully! You can now login.");
-        navigate("/login");
-      }
+      // Simulate an API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success("Account created successfully! You can now login.");
+      navigate("/login");
     } catch (error) {
       toast.error("Signup failed. Please try again.");
       console.error("Signup error:", error);
@@ -150,39 +124,6 @@ const Signup = () => {
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password_confirmation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                          autoComplete="new-password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full px-3 py-2"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />
                           ) : (
                             <Eye className="h-4 w-4" />

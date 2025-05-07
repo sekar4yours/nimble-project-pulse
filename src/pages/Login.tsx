@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
@@ -13,7 +13,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import { apiService } from "@/hooks/useApi";
 
 // Login form schema
 const loginSchema = z.object({
@@ -28,14 +27,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      navigate('/');
-    }
-  }, [navigate]);
-
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -47,15 +38,16 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      const response = await apiService.login({
-        email: data.email,
-        password: data.password
-      });
+      // For now, we'll just simulate a login
+      console.log("Login attempt with:", data);
+      
+      // Simulate an API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success("Login successful!");
       navigate("/");
     } catch (error) {
-      toast.error("Login failed. Please check your credentials and try again.");
+      toast.error("Login failed. Please try again.");
       console.error("Login error:", error);
     } finally {
       setIsSubmitting(false);
@@ -124,11 +116,6 @@ const Login = () => {
                   </FormItem>
                 )}
               />
-              <div className="text-right">
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Logging in..." : "Login"}
               </Button>
